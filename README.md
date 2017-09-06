@@ -15,9 +15,9 @@ RNA-seq pipeline for Illumina data. This pipeline is designed to run on a Sun Gr
 
 Current implementation uses STAR for aligning, featureCounts for abundance counting and DESeq2 for DGE
 
-Future verions will include k-mer based alignment (Kallisto/Salmon etc.) with their automatic feature abundance estimates.
-Also trasnscript quantification/estimation tools (isoEM/eXpress etc.). If avialable these methods will be analysed with DESeq2 (Note to self to check this).
+Future verions will include k-mer based alignment (Kallisto/Salmon etc.) with their automatic feature abundance estimates and trasnscript quantification/estimation tools (isoEM/eXpress etc.). These tools can be used to analyse differential exon usage. The output is not directly usable by DESeq2 for DGE, but there are methods available to convert estimated abundances to count data.
 
+I might add HISAT2/TOPHAT3 to the mix - once TH3 has been released.
 
 ### Setup pipeline
 ```shell
