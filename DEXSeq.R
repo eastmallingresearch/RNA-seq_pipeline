@@ -85,3 +85,7 @@ reduced_model <- ~ sample + exon
 dxd <- testForDEU( dxd,
 fullModel = design(dxd),
 reducedModel =  reduced_model,BPPARAM=BPPARAM)
+
+res <- results(dxd)
+res2 <- DEXSeqResults(dxd)	    
+	    
