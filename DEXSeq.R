@@ -23,7 +23,7 @@ qq <- lapply(list.files(".",".*.txt$",full.names=T,recursive=F),function(x) {fre
 
 # rename the sample columns (7th column in a feature counts table, saved as the path to the BAM file)
 # in the below this removes everything after the first dot in the 7th column
-invisible(lapply(seq(1:length(qq)), function(i) {colnames(qq[[i]])[7]<<-sub("\\..*","",colnames(qq[[i]])[7]))})
+invisible(lapply(seq(1:length(qq)), function(i) colnames(qq[[i]])[7]<<-sub("\\..*","",colnames(qq[[i]])[7])))
 
 # merge the list of data tables into a single data table
 m <- Reduce(function(...) merge(..., all = T,by=c("Geneid","Chr","Start","End","Strand","Length")), qq)
@@ -35,7 +35,7 @@ write.table(m[,c(1,7:(ncol(m))),with=F],"countData",sep="\t",na="",quote=F,row.n
 write.table(m[,1:6,with=F],"genes.txt",sep="\t",quote=F,row.names=F) 
 
 #==========================================================================================
-#      Read in data and creat DEXSeq object
+#      Read in data 
 ##=========================================================================================
 
 colData <- read.table("colData",sep="\t",row.names=1,header=T)
@@ -53,24 +53,35 @@ geneData <-  m[,c(1,2:6),with=F]
 geneData[order(Chr,Start,Geneid), Exonid := paste0("exon_",seq_len(.N)), by = Geneid]
     
 # design formula
-design = ~ sample + condition+exon:condition 
+full_design = ~ sample + condition+exon:condition 
 
-# add row ranges (or featureRanges=.. in above call)	    
-#featureRanges <- GRanges(m$Geneid,IRanges(m$Start,as.numeric(m$End)),m$Strand)
+# add row ranges    
+# featureRanges <- GRanges(m$Geneid,IRanges(m$Start,as.numeric(m$End)),m$Strand)
+# the above (which would need a chr name as well) is not necessary  - we're not looking for chimaeras	    
 featureRanges <- GRanges(m$Geneid,IRanges(1,as.numeric(m$Length)),m$Strand)
-#rowRanges(dxd)
+
+# get the transcript ids from the featureCounts.gtf (or DEXSeq_final.gff - the grep would need to change)	    
+transcripts <- fread("grep exon featureCounts.gtf")	  
+transcripts <- gsub("\";.*|transcripts \"","",transcripts$V9)	    
+
+#==========================================================================================
+#      DEXSeq analysis
+##=========================================================================================
 	    
 # create DEXSeq object	    
-dxd <- DEXSeqDataSet(countData,colData,design,featureID=geneData$Exonid,groupID=geneData$Geneid,featureRanges=featureRanges)
+dxd <- DEXSeqDataSet(countData,
+		     colData,
+		     design=full_design,
+		     featureID=geneData$Exonid,
+		     groupID=geneData$Geneid,
+		     featureRanges=featureRanges,
+		     transcripts=transcripts)
 
 sizeFactors(dxd) <- sizeFactors(estimateSizeFactors(dxd))
 dispersions(dxd) <- dispersions(estimateDispersions(dxd))
-				    
 
-#==========================================================================================
-#      Read in data and creat DEXSeq object
-##=========================================================================================
-
-
-
+reduced_model <- ~ sample + exon
 	    
+dxd <- testForDEU( dxd,
+fullModel = design(dxd),
+reducedModel =  reduced_model,BPPARAM=BPPARAM)
