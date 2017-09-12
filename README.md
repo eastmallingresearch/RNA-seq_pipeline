@@ -196,6 +196,7 @@ grep exon final_genes_appended_renamed.gff3|awk -F"\t" '{gsub(/;$/,"",$9);gsub(/
 This can then be fed into the HTSeq script as per DEXSeq manual, or if using featureCounts dexseq_prepare_annotation2.py from 
 https://github.com/vivekbhr/Subread_to_DEXSeq
 
+
 Youll also need to install the HTSeq python package - if you've got pip installed:
 ```shell
 pip install HTSeq
