@@ -201,6 +201,15 @@ Youll also need to install the HTSeq python package - if you've got pip installe
 pip install HTSeq
 ```
 You might need to upgrade numpy as well (numpy-1.9.2 doesn't work)
+```shell
+dexseq_prepare_annotation2.py -f featureCounts.gtf DEXSeq.gff DEXSeq_final.gff  
+```
+Then count with featureCounts:
+```shell
+featureCounts -f -O -p -T 16 \
+-F GTF -a featureCounts.gtf \
+-o counts.out Test.bam 
+```
 
 
 
