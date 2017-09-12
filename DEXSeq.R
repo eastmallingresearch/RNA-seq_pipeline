@@ -51,9 +51,6 @@ geneData <-  m[,c(1,2:6),with=F]
 	    
 # add an exon column to geneData by counting occurance of each gene (ordered by position)
 geneData[order(Chr,Start,Geneid), Exonid := paste0("exon_",seq_len(.N)), by = Geneid]
-    
-# design formula
-full_design = ~ sample + condition+exon:condition 
 
 # add row ranges    
 # featureRanges <- GRanges(m$Geneid,IRanges(m$Start,as.numeric(m$End)),m$Strand)
@@ -65,8 +62,11 @@ transcripts <- fread("grep exon featureCounts.gtf")
 transcripts <- gsub("\";.*|transcripts \"","",transcripts$V9)	    
 
 #==========================================================================================
-#      DEXSeq analysis
+#      DEXSeq analysis simple
 ##=========================================================================================
+# see below for an example of an experiment with replicates    
+# design formula
+full_design = ~ sample + exon +exon:condition 
 	    
 # create DEXSeq object	    
 dxd <- DEXSeqDataSet(countData,
@@ -75,11 +75,17 @@ dxd <- DEXSeqDataSet(countData,
 		     featureID=geneData$Exonid,
 		     groupID=geneData$Geneid,
 		     featureRanges=featureRanges,
-		     transcripts=transcripts)
+		     transcripts=transcripts
+)
 
+
+# calculate size factors 
 sizeFactors(dxd) <- sizeFactors(estimateSizeFactors(dxd))
-dispersions(dxd) <- dispersions(estimateDispersions(dxd))
 
+# calculate dispersions	    
+dxd <- dispersions(estimateDispersions(dxd))
+	    
+# reduced model	    
 reduced_model <- ~ sample + exon
 	    
 dxd <- testForDEU( dxd,
@@ -88,4 +94,25 @@ reducedModel =  reduced_model,BPPARAM=BPPARAM)
 
 res <- results(dxd)
 res2 <- DEXSeqResults(dxd)	    
+
 	    
+### with technical replicates ###	    
+
+dds <- 	DESeqDataSetFromMatrix(countData,colData,~1)
+	    
+# add grouping factor to identify technical replicates where sample contains the replicate info   
+dds$groupby <- paste(dds$condition,dds$sample,sep="_")
+
+# sum (collapse) replicates 	    
+dds <- collapseReplicates(dds,groupby=dds$groupby)
+
+dxd <- DEXSeqDataSet(assay(dds),
+		     as.data.frame(colData(dds)),
+		     design=full_design,
+		     featureID=geneData$Exonid,
+		     groupID=geneData$Geneid,
+		     featureRanges=featureRanges,
+		     transcripts=transcripts
+)	    
+	    
+# then as above
