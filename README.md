@@ -190,8 +190,18 @@ contig_1|AUGUSTUS|stop_codon|5447|5449|.|+|0|Parent=g2.t1;
 The DEXSeq script requires gene_id and transcript_id in field 9 - for exons only. In the above gff the Parent = transcript_id, but there is no gene_id. But it can be produces by stripping the .t[\d] from the end of Parent. The below script would make a DEXSeq compatible gff:
 
 ```shell
-grep exon mygff.gff3|awk -F"\t" '{x=$9;gsub(/.*=/,"gene_id=",x);gsub(/Parent=/,"transcript_id=",$9);sub(/\..*/,"",x);$9=$9x;print}' > DEXSeq.gff
+grep exon final_genes_appended_renamed.gff3|awk -F"\t" '{gsub(/;$/,"",$9);gsub(/$/,";",$9);x=$9;gsub(/.*=/,"gene_id=",x);gsub(/Parent=/,"transcript_id=",$9);sub(/\..*/,"",x);$9=$9x;print}' OFS="\t"> DEXSeq.gff
 ```
+
+This can then be fed into the HTSeq script as per DEXSeq manual, or if using featureCounts dexseq_prepare_annotation2.py from 
+https://github.com/vivekbhr/Subread_to_DEXSeq
+
+Youll also need to install the HTSeq python package - if you've got pip installed:
+```shell
+pip install HTSeq
+```
+You might need to upgrade numpy as well (numpy-1.9.2 doesn't work)
+
 
 
 ## DGE analysis
