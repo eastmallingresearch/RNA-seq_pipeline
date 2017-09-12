@@ -31,10 +31,7 @@ echo export RNSPL=~/RNA-seq_pipeline >>~/.bash_profile
 ## Filter data
 ## Align to ref genome/transcriptome
 
-THIS NEED EDITING - it's wrongheaded
-
-While featureCounts is perfectly capable of counting at the feature/exon level, it has no built-in statistical model for estimating likely isoforms. However the methods which can do this don't produce normal count data - therefore not compatible with DESeq2.
-Luckily (as I've just found out), there are tools available which can convert estimated counts to real counts, which can be used in later versions of DESeq (v1.11.23).
+DESeq (v1.11.23).
 https://f1000research.com/articles/4-1521/v2
 
 Update to come with implementation
@@ -75,8 +72,7 @@ dds<-DESeqDataSetFromTximport(txi.genes,data.frame(S="S1",C="H"),design=~1)
 sizeFactors(dds) <- sizeFactors(estimateSizeFactors(dds)
 ```
 Good for measuring gene level DE derived from transcripts (DTE) - but what about isoforms (different transcript/exon usage - DTU/DEU)?
-... Got these the wrong way round STAR/featureCounts/DEXSeq of exons for isoform detection and quantification
-
+If you have a well anotated genome with most transcripts already described - or possibly try mapping to exons?
 
 
 #### Genome alignment with STAR 
