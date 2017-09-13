@@ -4,15 +4,17 @@
 
 library(DEXSeq)
 library("BiocParallel")
-register(MulticoreParam(12))
-library(ggplot2)
-library(Biostrings)
-library(devtools)
-load_all("~/pipelines/metabarcoding/myfunctions") # this contains various R scripts for plotting graphs
+BPPARAM=MulticoreParam(12)
+register(BPPARAM)
 library(data.table)
-library(dplyr)
-library(naturalsort)
-library(tibble)
+
+# library(ggplot2)
+# library(Biostrings)
+# library(devtools)
+# load_all("~/pipelines/metabarcoding/myfunctions") # this contains various R scripts for plotting graphs
+# library(dplyr)
+# library(naturalsort)
+# library(tibble)
 
 #===============================================================================
 #       Load featureCounts data 
@@ -38,12 +40,14 @@ write.table(m[,1:6,with=F],"genes.txt",sep="\t",quote=F,row.names=F)
 #      Read in data 
 ##=========================================================================================
 
+# Sample data 	    
 colData <- read.table("colData",sep="\t",row.names=1,header=T)
 
+# extract counts from m or load them from a file (countData will need to converted to a data frame before calling DEXSeqDataSet)	    
 countData <- m[,c(7:length(m)),with=F] # or
 # countData <- read.table("countData",sep="\t",header=T,row.names=1) 
 
-# reorder countData columns to same order as colData rows (probably not necessary)
+# reorder countData columns to same order as colData rows and convert to data.frame 
 countData <- as.data.frame(countData[,row.names(colData),with=F])
 
 # get the gene data	    
@@ -52,23 +56,51 @@ geneData <-  m[,c(1,2:6),with=F]
 # add an exon column to geneData by counting occurance of each gene (ordered by position)
 geneData[order(Chr,Start,Geneid), Exonid := paste0("exon_",seq_len(.N)), by = Geneid]
 
-# add row ranges    
+# add row ranges (optional)  
 # featureRanges <- GRanges(m$Geneid,IRanges(m$Start,as.numeric(m$End)),m$Strand)
-# the above (which would need a chr name as well) is not necessary  - we're not looking for chimaeras	    
+# the above (which would need a chr name as well) might be useful depending on what your're doing 
+# but m$Geneid should probably be changed to the chromosome/scaffold/contig name - featureCounts.gtf/DESex_final.gff contain the info	    
 featureRanges <- GRanges(m$Geneid,IRanges(1,as.numeric(m$Length)),m$Strand)
 
-# get the transcript ids from the featureCounts.gtf (or DEXSeq_final.gff - the grep would need to change)	    
+# get the transcript ids from featureCounts.gtf	    
 transcripts <- fread("grep exon featureCounts.gtf")	  
 transcripts <- gsub("\";.*|transcripts \"","",transcripts$V9)	    
 
 #==========================================================================================
 #      DEXSeq analysis simple
 ##=========================================================================================
-# see below for an example of an experiment with replicates    
+
+##### NOTE #####
+# estimateDispersions and testForDEU can both be parallelsed by adding 
+# BPPARAM=BPPARAM
+# BUT parallisation did not work when I was tesing using MulticoreParam 		    
+# This is unfortunate as dispersion estimates may take hours to calculate
+	    
+#### NOTE 2 #####	    
+# If you have technical replicates, use the procedure as per DESeq2 to combine (sum) them into single rpelicates detailed below	    
+
+### technical replicates only ###	    
+
+dds <- 	DESeqDataSetFromMatrix(countData,colData,~1)
+	    
+# add grouping factor to identify technical replicates where sample contains the replicate info   
+dds$groupby <- paste(dds$condition,dds$sample,sep="_")
+
+# sum (collapse) replicates (collapseReplicates can be modified if you need mean or some other "summed" values)    
+dds <- collapseReplicates(dds,groupby=dds$groupby)
+
+# output summed data  
+countData <- assay(dds)	 
+
+# output collapsed sample data	    
+colData <- as.data.frame(colData(dds))	 
+	    
+### end technical replicates ###	 
+	    
 # design formula
 full_design = ~ sample + exon +exon:condition 
 	    
-# create DEXSeq object	    
+# create DEXSeq object     
 dxd <- DEXSeqDataSet(countData,
 		     colData,
 		     design=full_design,
@@ -78,41 +110,23 @@ dxd <- DEXSeqDataSet(countData,
 		     transcripts=transcripts
 )
 
-
 # calculate size factors 
 sizeFactors(dxd) <- sizeFactors(estimateSizeFactors(dxd))
 
-# calculate dispersions	    
+# calculate dispersions    
 dxd <- dispersions(estimateDispersions(dxd))
 	    
 # reduced model	    
 reduced_model <- ~ sample + exon
-	    
-dxd <- testForDEU( dxd,
-fullModel = design(dxd),
-reducedModel =  reduced_model,BPPARAM=BPPARAM)
 
-res <- results(dxd)
-res2 <- DEXSeqResults(dxd)	    
+# test for differential exon usage using LRT	    
+dxd <- testForDEU( dxd, fullModel = design(dxd), reducedModel =  reduced_model)
 
-	    
-### with technical replicates ###	    
+# add log fold changes (per sample vs sample 1) to results (I don't find this that useful) 	    
+dxd = estimateExonFoldChanges( dxd, fitExpToVar="condition")	    
 
-dds <- 	DESeqDataSetFromMatrix(countData,colData,~1)
-	    
-# add grouping factor to identify technical replicates where sample contains the replicate info   
-dds$groupby <- paste(dds$condition,dds$sample,sep="_")
+# Get the results table
+dxr1 <- DEXSeqResults(dxd)	    
 
-# sum (collapse) replicates 	    
-dds <- collapseReplicates(dds,groupby=dds$groupby)
+    
 
-dxd <- DEXSeqDataSet(assay(dds),
-		     as.data.frame(colData(dds)),
-		     design=full_design,
-		     featureID=geneData$Exonid,
-		     groupID=geneData$Geneid,
-		     featureRanges=featureRanges,
-		     transcripts=transcripts
-)	    
-	    
-# then as above
