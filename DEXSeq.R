@@ -163,11 +163,10 @@ table( before = dxr1$padj < 0.1, now = dxr2$padj < 0.1 )
 cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")	  
 
 pdf("test.pdf",width=8)
-plotDEXSeq( dxr, "g6103", displayTranscripts=TRUE, legend=TRUE, cex.axis=1.2, cex=1.3, lwd=2 )	    
+plotDEXSeq( dxr, "some_gene", displayTranscripts=TRUE, legend=TRUE, cex.axis=1.2, cex=1.3, lwd=2 )	    
+dev.off
 	    
-g6103
 # plot everything	    
-pdf	    
 DEXSeqHTML( dxr, FDR=0.05, color=cbbPalette,path=".",BPPARAM=BPPARAM)
 	    
 	    
