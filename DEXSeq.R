@@ -115,14 +115,18 @@ dxd <- DEXSeqDataSet(countData,
 		     transcripts=transcripts
 )
 
+	    
+# reduced model	    
+reduced_design <- ~ sample + exon	    
+	    
+# calculate model or run the steps individually below....	    
+dxr = DEXSeq(dxd) # but see ?DEXSeq for available options	    
+	    
 # calculate size factors 
 sizeFactors(dxd) <- sizeFactors(estimateSizeFactors(dxd))
 
 # calculate dispersions    
 dxd <- dispersions(estimateDispersions(dxd))
-	    
-# reduced model	    
-reduced_design <- ~ sample + exon
 
 # test for differential exon usage using LRT	    
 dxd <- testForDEU( dxd, fullModel = design(dxd), reducedModel =  reduced_design)
@@ -131,7 +135,7 @@ dxd <- testForDEU( dxd, fullModel = design(dxd), reducedModel =  reduced_design)
 dxd = estimateExonFoldChanges( dxd, fitExpToVar="condition")	    
 
 # Get the results table
-dxr1 <- DEXSeqResults(dxd)	    
+dxr <- DEXSeqResults(dxd)
 
 #==========================================================================================
 #      DEXSeq analysis multiple factors
@@ -152,5 +156,18 @@ reduced_model <- ~ sample + exon + block:exon
 dxr2 = DEXSeqResults( dxd ) # dxr1 calculated from one factor design
 table( before = dxr1$padj < 0.1, now = dxr2$padj < 0.1 )	    
 	    
+#==========================================================================================
+#      Plots
+##=========================================================================================	    
+	    
+cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")	  
+
+pdf("test.pdf",width=8)
+plotDEXSeq( dxr, "g6103", displayTranscripts=TRUE, legend=TRUE, cex.axis=1.2, cex=1.3, lwd=2 )	    
+	    
+g6103
+# plot everything	    
+pdf	    
+DEXSeqHTML( dxr, FDR=0.05, color=cbbPalette,path=".",BPPARAM=BPPARAM)
 	    
 	    
