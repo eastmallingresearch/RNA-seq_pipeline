@@ -44,30 +44,35 @@ write.table(m[,1:6,with=F],"genes.txt",sep="\t",quote=F,row.names=F)
 colData <- read.table("colData",sep="\t",row.names=1,header=T)
 
 # extract counts from m or load them from a file (countData will need to converted to a data frame before calling DEXSeqDataSet)	    
-countData <- m[,c(7:length(m)),with=F] # or
+countData <- m[order(Chr,Start,Geneid),c(1,7:length(m)),with=F] # or
 # countData <- read.table("countData",sep="\t",header=T,row.names=1) 
 
 # reorder countData columns to same order as colData rows and convert to data.frame 
-countData <- as.data.frame(countData[,row.names(colData),with=F])
+countData <- countData[,c("Geneid",row.names(colData)),with=F]
 
 # get the gene data	    
-geneData <-  m[,c(1,2:6),with=F]
+geneData <-  m[order(Chr,Start,Geneid),c(1,2:6),with=F]
+# geneData <- fread(genes.txt) # this MUST be a data.table
 	    
 # add an exon column to geneData by counting occurance of each gene (ordered by position)
-geneData[order(Chr,Start,Geneid), Exonid := paste0("exon_",seq_len(.N)), by = Geneid]
+geneData[, Exonid := paste0("exon_",seq_len(.N)), by = Geneid]
 
-# add row ranges (optional)  
-# featureRanges <- GRanges(m$Geneid,IRanges(m$Start,as.numeric(m$End)),m$Strand)
-# the above (which would need a chr name as well) might be useful depending on what your're doing 
-# but m$Geneid should probably be changed to the chromosome/scaffold/contig name - featureCounts.gtf/DESex_final.gff contain the info	    
-featureRanges <- GRanges(m$Geneid,IRanges(1,as.numeric(m$Length)),m$Strand)
+# set GRanges for each exon (optional - but set featureRanges to NULL otherwise)	    
+featureRanges <- GRanges(geneData$Chr,IRanges(geneData$Start,as.numeric(geneData$End)),geneData$Strand)	    
 
-# get the transcript ids from featureCounts.gtf	    
-transcripts <- fread("grep exon featureCounts.gtf")	  
-transcripts <- gsub("\";.*|transcripts \"","",transcripts$V9)	    
+# retrieve transcipts (optional - but set transcripts to NULL otherwise)	    
+features <- fread("grep exon featureCounts.gtf")	  
+# get the gene id
+features$Geneid <- gsub("\"|.*gene_id \"","",features$V9)	    
+# get transcript id
+features$Transcriptid <- gsub("\";.*|transcripts \"","",features$V9)	    
+# left join geneData and features
+geneData[features[,Geneid,Transcriptid],Transcriptid:=i.Transcriptid,on="Geneid"]
+
+transcripts <- geneData$Transcriptid    
 
 #==========================================================================================
-#      DEXSeq analysis simple
+#      DEXSeq analysis simple (one factor)
 ##=========================================================================================
 
 ##### NOTE #####
@@ -81,7 +86,7 @@ transcripts <- gsub("\";.*|transcripts \"","",transcripts$V9)
 
 ### technical replicates only ###	    
 
-dds <- 	DESeqDataSetFromMatrix(countData,colData,~1)
+dds <- 	DESeqDataSetFromMatrix(countData[,-1],colData,~1)
 	    
 # add grouping factor to identify technical replicates where sample contains the replicate info   
 dds$groupby <- paste(dds$condition,dds$sample,sep="_")
@@ -98,7 +103,7 @@ colData <- as.data.frame(colData(dds))
 ### end technical replicates ###	 
 	    
 # design formula
-full_design = ~ sample + exon +exon:condition 
+full_design <- ~ sample + exon + condition:exon 
 	    
 # create DEXSeq object     
 dxd <- DEXSeqDataSet(countData,
@@ -117,10 +122,10 @@ sizeFactors(dxd) <- sizeFactors(estimateSizeFactors(dxd))
 dxd <- dispersions(estimateDispersions(dxd))
 	    
 # reduced model	    
-reduced_model <- ~ sample + exon
+reduced_design <- ~ sample + exon
 
 # test for differential exon usage using LRT	    
-dxd <- testForDEU( dxd, fullModel = design(dxd), reducedModel =  reduced_model)
+dxd <- testForDEU( dxd, fullModel = design(dxd), reducedModel =  reduced_design)
 
 # add log fold changes (per sample vs sample 1) to results (I don't find this that useful) 	    
 dxd = estimateExonFoldChanges( dxd, fitExpToVar="condition")	    
@@ -128,5 +133,24 @@ dxd = estimateExonFoldChanges( dxd, fitExpToVar="condition")
 # Get the results table
 dxr1 <- DEXSeqResults(dxd)	    
 
-    
+#==========================================================================================
+#      DEXSeq analysis multiple factors
+##=========================================================================================    
 
+# A second factor could be something like batch or block 
+# The only change needed is in the models to add a factor:exon interation (which stays in both full and reduced designs)
+	    
+full_model <- ~ sample + exon + block:exon + condition:exon 	    
+reduced_model <- ~ sample + exon + block:exon
+	    
+# the rest of the analysis is as per one factor
+	    
+	    
+# this is quite nice - 
+# compare results from using one factor to multiple factor design     
+# then table them out
+dxr2 = DEXSeqResults( dxd ) # dxr1 calculated from one factor design
+table( before = dxr1$padj < 0.1, now = dxr2$padj < 0.1 )	    
+	    
+	    
+	    
