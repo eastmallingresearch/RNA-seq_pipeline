@@ -45,32 +45,30 @@ colData <- read.table("colData",sep="\t",row.names=1,header=T)
 
 # extract counts from m or load them from a file (countData will need to converted to a data frame before calling DEXSeqDataSet)	    
 countData <- m[order(Chr,Start,Geneid),c(1,7:length(m)),with=F] # or
-# countData <- read.table("countData",sep="\t",header=T,row.names=1) 
+# countData <- fread("countData",sep="\t",header=T) 
 
-# reorder countData columns to same order as colData rows and convert to data.frame 
+# reorder countData columns to same order as colData 
 countData <- countData[,c("Geneid",row.names(colData)),with=F]
 
-# get the gene data	    
+# get the gene data (ordered by chromosome and position)	    
 geneData <-  m[order(Chr,Start,Geneid),c(1,2:6),with=F]
 # geneData <- fread(genes.txt) # this MUST be a data.table
 	    
-# add an exon column to geneData by counting occurance of each gene (ordered by position)
-geneData[, Exonid := paste0("exon_",seq_len(.N)), by = Geneid]
-
-# set GRanges for each exon (optional - but set featureRanges to NULL otherwise)	    
-featureRanges <- GRanges(geneData$Chr,IRanges(geneData$Start,as.numeric(geneData$End)),geneData$Strand)	    
-
 # retrieve transcipts (optional - but set transcripts to NULL otherwise)	    
 features <- fread("grep exon featureCounts.gtf")	  
 # get the gene id
 features$Geneid <- gsub("\"|.*gene_id \"","",features$V9)	    
 # get transcript id
 features$Transcriptid <- gsub("\";.*|transcripts \"","",features$V9)	    
-# left join geneData and features
+# left join geneData and features (fast and memory efficient joining with data.table)
 geneData[features[,Geneid,Transcriptid],Transcriptid:=i.Transcriptid,on="Geneid"]
+	    
+# add an exon column to geneData by counting exon occurance in each gene (doesn't need to be per transcript)   
+geneData[, Exonid := paste0("exon_",seq_len(.N)), by = Geneid]
 
-transcripts <- geneData$Transcriptid    
-
+# set GRanges for each exon (optional - but set featureRanges to NULL otherwise) - ensure ranges are in the same order as geneData	    
+featureRanges <- GRanges(geneData$Chr,IRanges(geneData$Start,as.numeric(geneData$End)),geneData$Strand)	    
+	    
 #==========================================================================================
 #      DEXSeq analysis simple (one factor)
 ##=========================================================================================
@@ -86,7 +84,7 @@ transcripts <- geneData$Transcriptid
 
 ### technical replicates only ###	    
 
-dds <- 	DESeqDataSetFromMatrix(countData[,-1],colData,~1)
+dds <- 	DESeqDataSetFromMatrix(countData[,-1],colData,~1) 
 	    
 # add grouping factor to identify technical replicates where sample contains the replicate info   
 dds$groupby <- paste(dds$condition,dds$sample,sep="_")
@@ -111,8 +109,8 @@ dxd <- DEXSeqDataSet(countData,
 		     design=full_design,
 		     featureID=geneData$Exonid,
 		     groupID=geneData$Geneid,
-		     featureRanges=featureRanges,
-		     transcripts=transcripts
+		     transcripts=geneData$Transcriptid,
+		     featureRanges=featureRanges
 )
 
 	    
@@ -163,7 +161,7 @@ table( before = dxr1$padj < 0.1, now = dxr2$padj < 0.1 )
 cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")	  
 
 pdf("test.pdf",width=8)
-plotDEXSeq( dxr, "some_gene", displayTranscripts=TRUE, legend=TRUE, cex.axis=1.2, cex=1.3, lwd=2 )	    
+plotDEXSeq( dxr, "some_gene", displayTranscripts=TRUE, legend=TRUE,color=cbbPalette, cex.axis=1.2, cex=1.3, lwd=2 )	    
 dev.off
 	    
 # plot everything	    
