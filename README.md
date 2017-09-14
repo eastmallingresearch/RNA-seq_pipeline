@@ -23,10 +23,83 @@ I might add HISAT2/TOPHAT3 to the mix - once TH3 has been released.
 ```shell
 # set RNSPL variable to pipeline folder
 RNSPL=~/RNA-seq_pipeline
-# to set permanetly for future (bash) shell sessions (be careful with this, if you have settings in ~/.profile they will no longer load)
+
+# set permanetly for future (bash) shell sessions (be careful with this, if you have settings in ~/.profile they will no longer load)
 echo export RNSPL=~/RNA-seq_pipeline >>~/.bash_profile
 ```
+
+## common tasks
+Create project folder and linked to RNA-seq pipeline 
+```shell
+PROJECT_FOLDER=~/projects/my_project_folder
+mkdir -p $PROJECT_FOLDER
+
+ln -s $PROJECT_FOLDER/RNA-seq_pipeline $RNSPL
+```
+
+Create some sub folders to store files and analysis results
+```shell
+# folder to store cluster job output
+mkdir $PROJECT_FOLDER/cluster
+
+mkdir -p $PROJECT_FOLDER/data/fastq
+mkdir $PROJECT_FOLDER/data/trimmed
+mkdir $PROJECT_FOLDER/data/filtered
+mkdir $PROJECT_FOLDER/data/aligned
+mkdir $PROJECT_FOLDER/data/counts
+
+mkdir -p $PROJECT_FOLDER/analysis/quality
+mkdir $PROJECT_FOLDER/analysis/DGE
+mkdir $PROJECT_FOLDER/analysis/DEU
+```
+
+Get hold of the raw data and link to fastq folder.  
+```shell
+# link
+ln -s /data/RNA-seq/this_project_data/*.gz $PROJECT_FOLDER/data/fastq/. 
+
+# Decompress sym linked files (if required)
+for FILE in $PROJECT_FOLDER/data/fastq/*.gz; do 
+ $PROJECT_FOLDER/RNA-seq_pipeline/scripts/PIPELINE.sh -c unzip $FILE 2
+done
+```
+
 ## Quality check
+Qualtiy checking with fastQC (http://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
+```shell
+for FILE in $PROJECT_FOLDER/data/fastq/*.gz; do 
+	$PROJECT_FOLDER/RNA-seq_pipeline/scripts/PIPELINE.sh -c qcheck $FILE $PROJECT_FOLDER/analysis/quality
+done
+```
+
+## Trim data
+Trimming was performed with Trimmomatic (trim.sh, submit_trim.sh and truseq.fa should all be in same directory)
+Around 25% - 30% of reverse reads were discarded due to adapter contamination. Trimmomatic was set to capture (rather than dump) unpaired forward reads. SE workflow to follow...
+
+```shell
+for R1 in $PROJECT_FOLDER/data/fastq/*_1.fastq.gz; do
+ R2=$(echo $R1|sed 's/\_1\.fastq/\_2\.fastq/')
+ $PROJECT_FOLDER/RNA-seq_pipeline/scripts/PIPELINE.sh -c trim \
+ $R1 \
+ $R2 \
+ $PROJECT_FOLDER/data/trimmed \
+ $PROJECT_FOLDER/RNA-seq_pipeline/scripts/truseq.fa \
+ 4
+done
+```
+
+## Filter data
+Remove phix/rrna or other contaminations
+```shell
+for R1 in $QUORN/trimmed/*_1.fq.gz; do
+ R2=$(echo $R1|sed 's/\_1\.fastq/\_2\.fastq/')
+ $QUORN/RNA-seq_pipeline/scripts/PIPELINE.sh -c filter \
+ $QUORN/RNA-seq_pipeline/phix/phix \
+ $R1 $R2 \
+ $QUORN/filtered
+done
+```
+
 ## Trim data
 ## Filter data
 ## Align to ref genome/transcriptome
