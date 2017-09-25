@@ -126,11 +126,12 @@ salmon index -t $PROJECT_FOLDER/data/genome/transcriptome.fasta -i $PROJECT_FOLD
 #### Mapping and quantification with salmon
 is a single process - it accepts gz/bgz compressed files
 ```shell
-for FR in $PROJECT_FOLDER/data/filtered/*_1.fq.gz; do
+for FR in $PROJECT_FOLDER/data/filtered/*_1.filtered.fq.gz; do
  RR=$(echo $FR|sed 's/_1/_2/')
+ OUTDIR=$(echo $FR|awk -F"/" '{print $NF}'|sed 's/_.*//')
  $PROJECT_FOLDER/RNA-seq_pipeline/scripts/PIPELINE.sh -c salmon \
  $PROJECT_FOLDER/data/genome/SALMON_quasi \
- $PROJECT_FOLDER/data/counts \
+ $PROJECT_FOLDER/data/counts/$OUTDIR \
  $FR $RR \
  --numBootstraps 1000 --dumpEq --seqBias --gcBias
 done
