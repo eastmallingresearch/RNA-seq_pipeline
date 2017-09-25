@@ -8,7 +8,7 @@ register(MulticoreParam(12))
 library(ggplot2)
 library(Biostrings)
 library(devtools)
-load_all("~/pipelines/metabarcoding/myfunctions")
+load_all("~/pipelines/RNA_seq/scripts/myfunctions")
 library(data.table)
 library(dplyr)
 library(naturalsort)
@@ -88,32 +88,18 @@ alpha <- 0.05
 # contrast=c("condition","RH1","RH2") etc. (the below just runs through all of the different sample types (excluding RH1))
 res <- results(dds,alpha=alpha)
 
+# get annotations (if you have any)	    
+
+annotations <- read.table("annotations.txt", sep="\t",header=T)	    
+	    
 # merge results with annotations
-res.merged <- lapply(res,function(x) left_join(rownames_to_column(as.data.frame(x)),annotations,by=c("rowname"="query_id")))	
+res.merged <- left_join(rownames_to_column(as.data.frame(res)),annotations,by=c("rowname"="query_id"))
 	
 # get significant results
-sig.res <- lapply(res.merged, function(x) subset(x,padj<=alpha))
-		  
-# reorder sig results (ascending)
-sig.res <- lapply(sig.res,function(x) x[order(x$padj),])
-	
-# merged  merged
-out <- res.merged[[1]][,c(1:2)]
-invisible(lapply(res.merged,function(o) out<<-cbind(out,o[,c(3,7)])))
-out <- cbind(out,res.merged[[1]][,8:16])
-colnames(out)[3:16] <- c("FC_02793","P_02793","FC_F55","P_F55","FC_10170","P_10170","FC_MWT","P_MWT","FC_MOL","P_MOL","FC_MKO","P_MKO","FC_TJ","P_TJ")
-write.table(out,"all_merged_18_08_17.tsv",sep="\t",quote=F,na="",row.names=F)
+sig.res <- subset(res.merge,padj<=alpha)
 
-# sig all		 
-all.sig <- subset(out,P_02793<=0.05&P_F55<=0.05&P_10170<=0.05&P_MWT<=0.05&P_MOL<=0.05&P_MKO<=0.05&P_TJ<=0.05)		 
-write.table(all.sig,"all_sig_18_08_17.tsv",sep="\t",quote=F,na="",row.names=F)
-	
-# write tables of results, and significant results
-lapply(seq(1:7),function(x) {
-	write.table(res.merged[[x]],paste(names(res.merged)[x],"merged_18_08_17.txt",sep="_"),quote=F,na="",row.names=F,sep="\t")
-	write.table(sig.res[[x]],paste(names(sig.res)[x],"sig_merged_18_08_17.txt",sep="_"),quote=F,na="",row.names=F,sep="\t")
-})	
-	
+# write tables of results
+write.table(res.merged,"results.txt",quote=F,na="",row.names=F,sep="\t")
 	
 #===============================================================================
 #       FPKM
