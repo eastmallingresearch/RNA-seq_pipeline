@@ -28,7 +28,7 @@ RNSPL=~/RNA-seq_pipeline
 echo export RNSPL=~/RNA-seq_pipeline >>~/.bash_profile
 ```
 
-## common tasks
+## Common tasks
 Create project folder and linked to RNA-seq pipeline 
 ```shell
 PROJECT_FOLDER=~/projects/my_project_folder
@@ -107,7 +107,7 @@ https://f1000research.com/articles/4-1521/v2
 
 Update to come with implementation
 
-### quantification using Salmon
+### Quantification using Salmon
 Salmon can run in two modes, psuedo mapping or alignmnet mode using a pre-aligned SAM/BAM. The BAM <i>must</i> be unsorted and aligned to the transcriptome. 
 
 O.K. running Salmon with the filtered read files - it's fast...
@@ -165,8 +165,10 @@ sizeFactors(dds) <- sizeFactors(estimateSizeFactors(dds)
 Good for measuring gene level DE derived from transcripts (DTE) - but what about isoforms (different transcript/exon usage - DTU/DEU)?
 If you have a well anotated genome with most transcripts already described - or possibly try mapping to exons?
 
-#### Genome alignment with STAR 
-An index must first be created
+### Quantification with STAR and featureCounts 
+
+#### Create STAR genome index
+A index must first be created
 e.g. genome and gff (not essential but useful) located in $PROJECT_FOLDER/data/genome/
 ```shell
 STAR \
@@ -221,9 +223,7 @@ for R1 in $PROJECT_FOLDER/filtered/*1.fq; do
  # --outFilterScoreMinOverLread 0.3 # unused parameter - useful for mapping short alignments
 done
 ```
-##### Count features
-With featureCounts. 
-
+#### Count features
 This can be done in R, but is slow with seqeuntial file import. Outside R each sample is counted seperately.
 
 ```shell
