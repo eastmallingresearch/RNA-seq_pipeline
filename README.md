@@ -77,11 +77,11 @@ Trimming was performed with Trimmomatic (trim.sh, submit_trim.sh and truseq.fa s
 Around 25% - 30% of reverse reads were discarded due to adapter contamination. Trimmomatic was set to capture (rather than dump) unpaired forward reads. SE workflow to follow...
 
 ```shell
-for R1 in $PROJECT_FOLDER/data/fastq/*_1.fastq.gz; do
- R2=$(echo $R1|sed 's/\_1\.fastq/\_2\.fastq/')
+for FR in $PROJECT_FOLDER/data/fastq/*_1.fastq.gz; do
+ RR=$(echo $FR|sed 's/\_1\.fastq/\_2\.fastq/')
  $PROJECT_FOLDER/RNA-seq_pipeline/scripts/PIPELINE.sh -c trim \
- $R1 \
- $R2 \
+ $FR \
+ $RR \
  $PROJECT_FOLDER/data/trimmed \
  $PROJECT_FOLDER/RNA-seq_pipeline/scripts/truseq.fa \
  4
@@ -91,17 +91,15 @@ done
 ## Filter data
 Remove phix/rrna or other contaminations
 ```shell
-for R1 in $QUORN/trimmed/*_1.fq.gz; do
- R2=$(echo $R1|sed 's/\_1\.fastq/\_2\.fastq/')
- $QUORN/RNA-seq_pipeline/scripts/PIPELINE.sh -c filter \
- $QUORN/RNA-seq_pipeline/phix/phix \
- $R1 $R2 \
- $QUORN/filtered
+for FR in $PROJECT_FOLDER/data/trimmed/*_1.fq.gz; do
+ RR=$(echo $FR|sed 's/\_1\.fq/\_2\.fq/')
+ $PROJECT_FOLDER/RNA-seq_pipeline/scripts/PIPELINE.sh -c filter \
+ $PROJECT_FOLDER/RNA-seq_pipeline/phix/phix \
+ $FR $RR \
+ $PROJECT_FOLDER/filtered
 done
 ```
 
-## Trim data
-## Filter data
 ## Align to ref genome/transcriptome
 
 DESeq (v1.11.23).
@@ -109,24 +107,43 @@ https://f1000research.com/articles/4-1521/v2
 
 Update to come with implementation
 
-#### quantification using Salmon
-Salmon can run in two modes, psuedo mapping or alignmnet mode using a pre-aligned SAM/BAM. The BAM <i>must</i> be unsorted - aargh, and aligned to a transcriptome not genome -aargh<sup>2</sup>  
+### quantification using Salmon
+Salmon can run in two modes, psuedo mapping or alignmnet mode using a pre-aligned SAM/BAM. The BAM <i>must</i> be unsorted and aligned to the transcriptome. 
 
 O.K. running Salmon with the filtered read files - it's fast...
 
-Test example
+#### Build index for salmon psuedo mapping
+Assuming the transcriptome is available...
+If you have a genome plus a gff file, I have (somewhere) a scripts which can help make a transcriptome file. gff being a pretty grotty (non) standard, the results need to be checked.
+
+First step is to build a psuedo mapping index file
+e.g. transcriptome located at $PROJECT_FOLDER/data/genome/transcriptome.fa
 ```shell
 # Build index from transcript file
-salmon index -t ../Fven_A3-5_ncbi_final_genes_appended_renamed.cds.fasta -i SALMON_quasi
-
-salmon quant -i ../SALMON_quasi -l A  -1 WTCHG_258645_201.1.fq -2 WTCHG_258645_201.2.fq -o quasi_out_boot \
---numBootstraps 1000 -p 16 --dumpEq --seqBias --gcBias --writeUnmappedNames --writeMappings=test.sam
+salmon index -t $PROJECT_FOLDER/data/genome/transcriptome.fasta -i $PROJECT_FOLDER/data/genome/SALMON_quasi
 ```
-For the above the first line contains required options (for PE reads). The second line includes some of the optional settings
-http://salmon.readthedocs.io/en/latest/index.html for all the options to salmon.
 
+#### Mapping and quantification with salmon
+is a single process - it accepts gz/bgz compressed files
+```shell
+for FR in $PROJECT_FOLDER/data/filtered/*_1.fq.gz; do
+ RR=$(echo $FR|sed 's/_1/_2/')
+ $PROJECT_FOLDER/RNA-seq_pipeline/scripts/PIPELINE.sh -c salmon \
+ $PROJECT_FOLDER/data/genome/SALMON_quasi \
+ $PROJECT_FOLDER/data/counts \
+ $FR $RR \
+ --numBootstraps 1000 --dumpEq --seqBias --gcBias
+done
+ ```
+--writeUnmappedNames --writeMappings=test.sam
 
-tximport is an R library which can convert salmon transcript "pseuod" counts (or other pseudo mapped counts) to gene counts. 
+From the above the last line includes some of the optional settings for salmon.
+see http://salmon.readthedocs.io/en/latest/index.html for description of all options (or; salmon quant --help-reads
+). 
+
+#### Convert pseudo counts to gene counts
+tximport is an R library which can convert salmon transcript "pseudo" counts (or other pseudo mapped counts) to gene counts (looks like later versions of salmon can do this natively if you provide a gff file (with -g flag). I haven't tested this yet).   
+
 First needs a mapping file of transcript to gene.
 ```shell
  awk -F"\t" '{c=$1;sub("\..*","",$1);print c,$1}' OFS="\t" quant.sf >trans2gene.txt
@@ -144,38 +161,39 @@ txi.genes <- summarizeToGene(txi.reps,tx2gene)
 dds<-DESeqDataSetFromTximport(txi.genes,data.frame(S="S1",C="H"),design=~1)
 sizeFactors(dds) <- sizeFactors(estimateSizeFactors(dds)
 ```
+
 Good for measuring gene level DE derived from transcripts (DTE) - but what about isoforms (different transcript/exon usage - DTU/DEU)?
 If you have a well anotated genome with most transcripts already described - or possibly try mapping to exons?
 
-
 #### Genome alignment with STAR 
-I prefer STAR now - it's performance is not so depedent on choice of input parameters (compared to e.g. Bowtie2).  
 An index must first be created
+e.g. genome and gff (not essential but useful) located in $PROJECT_FOLDER/data/genome/
 ```shell
 STAR \
 --runMode genomeGenerate \
---genomeDir $QUORN/genome/STAR_illumina \
---genomeFastaFiles $QUORN/genome/Fven_A3-5_ncbi_WT_contigs_unmasked.fa \
---sjdbGTFfile $QUORN/genome/Fven_A3-5_ncb_final_genes_appended_renamed.gff3 \
+--genomeDir $PROJECT_FOLDER/genome/STAR_illumina \
+--genomeFastaFiles $PROJECT_FOLDER/genome/my_genome.fa \
+--sjdbGTFfile $PROJECT_FOLDER/genome/my_gff.gff3 \
 --sjdbGTFtagExonParentTranscript Parent \
 --sjdbGTFtagExonParentGene Parent
 ```
 
+#### Alignment with STAR
 Basic star alignment parameters:
 STAR --genomeDir your_out_dir --outFileNamePrefix something --readFilesIn fastq_F fastq_R --outSAMtype SAM --runThreadN 16
 
-Alignment was done using both 2-pass alignment (2-pass alignment and basic alignment) and basic alignment only (though only as I added the two-stage process later, no point in just doing the basic alignment, unless you <i>must</i> have results by tomorrow .  
+Alignment using both 2-pass alignment (2-pass alignment and basic alignment) and basic alignment only .     
 For two pass, first pass finds extra splice junctions second pass uses these extra annotations for mapping.    
 For basic only alignment the below code was modified to comment out "--sjdbFileChrStartEnd $splice_list" (and remove the preceeding line continuation \))
 
-2-pass alignment
+##### 2-pass alignment
 ```shell
-for R1 in $QUORN/filtered/*1.fq; do  
+for R1 in $PROJECT_FOLDER/filtered/*1.fq; do  
  R2=$(echo $R1|sed -e 's/\.1\./\.2\./');  
  prefix=$(echo $R1|awk -F"/" '{gsub(/\..*/,"",$NF);print $NF}');  
- $QUORN/RNA-seq_pipeline/scripts/PIPELINE.sh -c star \
- $QUORN/genome/STAR_illumina \
- $QUORN/junctions \
+ $PROJECT_FOLDER/RNA-seq_pipeline/scripts/PIPELINE.sh -c star \
+ $PROJECT_FOLDER/genome/STAR_illumina \
+ $PROJECT_FOLDER/junctions \
  $prefix \
  $R1 \
  $R2 \
@@ -183,15 +201,15 @@ for R1 in $QUORN/filtered/*1.fq; do
  done
 ```
 
-basic alignment (with chimera detection)
+##### single alignment (with chimera detection)
 ```shell
-splice_list=$(ls $QUORN/junctions/*.tab)
-for R1 in $QUORN/filtered/*1.fq; do  
+splice_list=$(ls $PROJECT_FOLDER/junctions/*.tab)
+for R1 in $PROJECT_FOLDER/filtered/*1.fq; do  
  R2=$(echo $R1|sed -e 's/\.1\./\.2\./');  
  prefix=$(echo $R1|awk -F"/" '{gsub(/\..*/,"",$NF);print $NF}');  
- $QUORN/RNA-seq_pipeline/scripts/PIPELINE.sh -c star \
- $QUORN/genome/STAR_illumina \
- $QUORN/aligned \
+ $PROJECT_FOLDER/RNA-seq_pipeline/scripts/PIPELINE.sh -c star \
+ $PROJECT_FOLDER/genome/STAR_illumina \
+ $PROJECT_FOLDER/aligned \
  $prefix \
  $R1 \
  $R2 \
@@ -203,20 +221,19 @@ for R1 in $QUORN/filtered/*1.fq; do
  # --outFilterScoreMinOverLread 0.3 # unused parameter - useful for mapping short alignments
 done
 ```
-#### Count features
-Using featureCounts. 
+##### Count features
+With featureCounts. 
 
 This can be done in R, but is slow with seqeuntial file import. Outside R each sample is counted seperately.
 
 ```shell
 featureCounts -o output_file -a gff_file sam_files
-
 ```
 
 Can be useful to produce a SAF file from an input gff (as they are not always consistent)
 The below will extract exon annotations and output the ninth column stipped of ID= and anything after the first ".", then the first column (chromosome) and etc.
 ```
-grep exon final_genes_appended.gff3|awk -F"\t" '{gsub(/ID=/,"",$NF);gsub(/\..*/,"",$NF);print $NF,$1,$4,$5,$7}' OFS="\t" > $QUORN/counts/exons.SAF
+grep exon final_genes_appended.gff3|awk -F"\t" '{gsub(/ID=/,"",$NF);gsub(/\..*/,"",$NF);print $NF,$1,$4,$5,$7}' OFS="\t" > $PROJECT_FOLDER/counts/exons.SAF
 ```
 
 The RNA-seq pipeline can be used to run featureCounts:
@@ -224,17 +241,21 @@ PIPELINE.sh -c counts annotaions output_dir output_file sam/bam(s) [options]
 
 The below runs with 12 threads (-T 12), counts all multimapping reads (-M) and uses a SAF file for input (-F SAF)
 ```
-for D in $QUORN/aligned/treatment/WTCHG*; do
-OUTFILE=$(echo $D|awk -F"/" '{print $(NF)}').counts
-$QUORN/RNA-seq_pipeline/scripts/PIPELINE.sh -c counts \
-$QUORN/counts/exons.SAF \
-$QUORN/counts \
-$OUTFILE \
-$D/star_aligmentAligned.sortedByCoord.out.bam -T 12 -M -F SAF
+for D in $PROJECT_FOLDER/aligned/treatment/WTCHG*; do
+ OUTFILE=$(echo $D|awk -F"/" '{print $(NF)}').counts
+ $PROJECT_FOLDER/RNA-seq_pipeline/scripts/PIPELINE.sh -c counts \
+ $PROJECT_FOLDER/counts/exons.SAF \
+ $PROJECT_FOLDER/counts \
+ $OUTFILE \
+ $D/star_aligmentAligned.sortedByCoord.out.bam -T 12 -M -F SAF
 done
 ```
 
-#### isoforms using STAR/featureCounts/DEXSeq
+## Differential gene expression with DESeq
+Follow script DGE.R
+
+## Differential exon usage with STAR/featureCounts/DEXSeq
+NOTE: this section requires editing
 
 DEXSeq requires its own gtf file - they provide a python script to create it, but due to the mess of the gtf/gff "standard" it probably won't work.  
 
@@ -266,9 +287,8 @@ The DEXSeq script requires gene_id and transcript_id in field 9 - for exons only
 grep exon final_genes_appended_renamed.gff3|awk -F"\t" '{gsub(/;$/,"",$9);gsub(/$/,";",$9);x=$9;gsub(/.*=/,"gene_id=",x);gsub(/Parent=/,"transcript_id=",$9);sub(/\..*/,"",x);$9=$9x;print}' OFS="\t"> DEXSeq.gff
 ```
 
-This can then be fed into the HTSeq script as per DEXSeq manual, or if using featureCounts dexseq_prepare_annotation2.py from 
-https://github.com/vivekbhr/Subread_to_DEXSeq
-
+This can then be fed into the HTSeq script as per DEXSeq manual, or if using featureCounts dexseq_prepare_annotation2.py 
+(https://github.com/vivekbhr/Subread_to_DEXSeq)
 
 Youll also need to install the HTSeq python package - if you've got pip installed:
 ```shell
@@ -285,8 +305,8 @@ featureCounts -f -O -p -T 16 \
 -o counts.out Test.bam 
 ```
 
+DEU.r
 
 
-## DGE analysis
 
 
