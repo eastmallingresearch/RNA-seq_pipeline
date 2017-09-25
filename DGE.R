@@ -104,9 +104,18 @@ write.table(res.merged,"results.txt",quote=F,na="",row.names=F,sep="\t")
 #===============================================================================
 #       FPKM
 #===============================================================================
-
+# note this is pointless if using salmon or some other pseudo counting aligner
+	    
+# set GRanges for each gene
+# fast method - requires some editing	    
+rowRanges(dds) <- GRanges(geneData$Chr,IRanges(geneData$Start,as.numeric(geneData$End)),geneData$Strand)	    	    
+# slow method - doesn't require editing	    
 rowRanges(dds) <- GRangesList(apply(m,1,function(x) GRanges(x[[1]],IRanges(1,as.numeric(x[[6]])),"+")))
+
+# calculate FPKM values
 myfpkm <- data.table(GeneID=m[,1],length=m[,6],fpkm(dds,robust=T))
+				    
+# write FPKM values				    
 write.table(myfpkm,"fpkm.txt",quote=F,na="",sep="\t")
 	
 #===============================================================================
