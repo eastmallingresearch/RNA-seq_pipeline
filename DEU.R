@@ -21,7 +21,7 @@ library(data.table)
 #===============================================================================
 
 # load tables into a list of data tables - "." should point to counts directory, e.g. "counts/."
-qq <- lapply(list.files(".",".*.txt$",full.names=T,recursive=F),function(x) {fread(x,skip=1)}) # don't need the {} round fread(x), but it messes with the git tabbing if you don't 
+qq <- lapply(list.files(".",".*.txt$",full.names=T,recursive=F),function(x) fread(x,skip=1))
 
 # rename the sample columns (7th column in a feature counts table, saved as the path to the BAM file)
 # in the below this removes everything after the first dot in the 7th column
@@ -80,7 +80,7 @@ featureRanges <- GRanges(geneData$Chr,IRanges(geneData$Start,as.numeric(geneData
 # This is unfortunate as dispersion estimates may take hours to calculate
 	    
 #### NOTE 2 #####	    
-# If you have technical replicates, use the procedure as per DESeq2 to combine (sum) them into single rpelicates detailed below	    
+# If you have technical replicates, use the same procedure as per DESeq2 to combine (sum) them into single replicates as detailed below	    
 
 ### technical replicates only ###	    
 
