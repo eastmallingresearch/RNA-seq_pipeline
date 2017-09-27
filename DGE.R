@@ -8,7 +8,7 @@ register(MulticoreParam(12))
 library(ggplot2)
 library(Biostrings)
 library(devtools)
-load_all("~/pipelines/RNA_seq/scripts/myfunctions")
+load_all("~/pipelines/RNA-seq/scripts/myfunctions")
 library(data.table)
 library(dplyr)
 library(naturalsort)
@@ -75,11 +75,13 @@ invisible(sapply(seq(1,3), function(i) colnames(txi.genes[[i]])<<-mysamples))
 ##=========================================================================================
 
 # Read sample metadata	    
-colData <- read.table("colData",header=T,sep="\t")
+colData <- read.table("colData",header=T,sep="\t",row.names=1)
     
-# countData <- fread("countData",sep="\t",header=T,row.names=1) 
-countData <- countData[,colData$SampleID] # reorder countData columns to same order as colData rows 
-
+# reorder colData for salmon 		 
+colData <- colData[mysamples,]
+		 
+# reorder colData for featureCounts		 
+colData <- colData[colnames(countData),]
 		 
 #===============================================================================
 #       DESeq2 analysis
