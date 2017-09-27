@@ -150,7 +150,7 @@ First needs a mapping file of transcript to gene.
  awk -F"\t" '{c=$1;sub("\..*","",$1);print c,$1}' OFS="\t" quant.sf >trans2gene.txt
 ```
 
- tximport requires R v 3.3 to install via Bioconductor, otherwise can install from the binary 
+tximport requires R v 3.3 to install via Bioconductor, otherwise can install from the binary 
 ```R
 library(tximport)
 library(rjson)
