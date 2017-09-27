@@ -15,11 +15,15 @@ library(naturalsort)
 library(tibble)
 
 #===============================================================================
-#       Load features counts data 
+#       Load count data 
 #===============================================================================
 
+### featureCounts ###
+
 # load tables into a list of data tables - "." should point to counts directory, e.g. "counts/."
-qq <- lapply(list.files(".",".*.txt$",full.names=T,recursive=F),function(x) fread(x)) 
+# depending on how your count files are named and stored (in subdirectories or not) the .*txt$ regex and recursive flag may need editing
+# the example below assumes all count files have file names ending in .txt and are all in a single folder (featureCounts standard)
+qq <- lapply(list.files(".",".*txt$",full.names=T,recursive=F),function(x) fread(x)) 
 
 # rename the sample columns (7th column in a feature counts table, saved as the path to the BAM file)
 # in the below I'm saving the 8th ([[1]][8]) path depth (which was the informative folder name containg the BAM file)
@@ -34,6 +38,17 @@ write.table(m[,c(1,7:(ncol(m))),with=F],"countData",sep="\t",na="",quote=F,row.n
 # output gene details
 write.table(m[,1:6,with=F],"genes.txt",sep="\t",quote=F,row.names=F) 
 
+	    
+### SALMON ###
+
+# load tables into a list of data tables - "." should point to counts directory, e.g. "counts/."
+# for Salmon, all count files will have the same name (quant.sf) but be in seperate folder - so:	    
+qq <- lapply(list.files(".","quant.sf",full.names=T,recursive=T),function(x) fread(x)) 
+	     
+# unlike featureCounts the counts column header does contain information about the sample (named 	     
+names(qq) <- list.files(".","quant.sf",full.names=T,recursive=T)
+	    
+	    
 #==========================================================================================
 #       Read pre-prepared colData,  countData and annotations
 ##=========================================================================================
