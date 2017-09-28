@@ -53,13 +53,11 @@ tx2gene <- read.table("trans2gene.txt",header=T,sep="\t")
 
 # import quantification files
 # txi.reps <- tximport(list.files(".","quant.sf",full.names=T,recursive=T),type="salmon",tx2gene=tx2gene,txOut=T)
-# get the sample name form the file path - if not run from the "counts" folder the ...=2 may need to change
-# if you're following the pipeline exactly the sample name will be the second last file depth
-# e.g /home/bob/myproject/data/counts/MYSAMPLE/quan.   ... O.k. change of plan though the below is very cool so I've left it here    
+# ...change of plan (it's easier to use list.dirs) though the below is very cool so I've left it here    
 # mysamples <- rapply(strsplit(list.files(".","quant.sf",full.names=T,recursive=T),"\\/"), f=`[[`, ...=2, how="unlist")
 
 # import quantification files	    
-txi.reps <- tximport(paste(list.dirs(".",full.names=F,recursive=F),"/quant.sf",sep=""),type="salmon",tx2gene=tx2gene,txOut=T)	    
+txi.reps <- tximport(paste(list.dirs(".",full.names=T,recursive=F),"/quant.sf",sep=""),type="salmon",tx2gene=tx2gene,txOut=T)	    
 	    
 # get the sample names from the folders	    
 mysamples <- list.dirs(".",full.names=F,recursive=F)
@@ -72,7 +70,7 @@ invisible(sapply(seq(1,3), function(i) colnames(txi.genes[[i]])<<-mysamples))
 
 #==========================================================================================
 #       Read pre-prepared sample metadata and annotations
-##=========================================================================================
+#=========================================================================================
 
 # Read sample metadata	    
 colData <- read.table("colData",header=T,sep="\t",row.names=1)
@@ -83,6 +81,8 @@ colData <- colData[mysamples,]
 # reorder colData for featureCounts		 
 colData <- colData[colnames(countData),]
 		 
+# get annotations (if you have any)	    
+annotations <- read.table("annotations.txt", sep="\t",header=T)	   		 
 #===============================================================================
 #       DESeq2 analysis
 #		Set alpha to the required significance level. This also effects how
@@ -107,7 +107,9 @@ dds <- collapseReplicates(dds,groupby=dds$groupby)
 
 #### end technical replicates ####   
 	    	    
-# normalise counts for different library size (do after collapsing replicates)
+# featureCounts only - normalise counts for different library size (do after collapsing replicates)
+# NOTE: need to work out what to do with technical replicates for salmon workflow
+# probably take average of avgTxLength for the summed samples 
 sizeFactors(dds) <- sizeFactors(estimateSizeFactors(dds)) 
 
 # define the DESeq 'GLM' model	    
@@ -126,11 +128,7 @@ alpha <- 0.05
 # res is a list object containing the DESeq results objects for each contrast
 # contrast=c("condition","RH1","RH2") etc. (the below just runs through all of the different sample types (excluding RH1))
 res <- results(dds,alpha=alpha)
-
-# get annotations (if you have any)	    
-
-annotations <- read.table("annotations.txt", sep="\t",header=T)	    
-	    
+    
 # merge results with annotations
 res.merged <- left_join(rownames_to_column(as.data.frame(res)),annotations,by=c("rowname"="query_id"))
 	
