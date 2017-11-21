@@ -85,10 +85,10 @@ star|star.sh)
 	$SCRIPT_DIR/star.sh -s $SCRIPT_DIR $@ 
 	exit 0
 ;;
-align|align.sh)
-	$SCRIPT_DIR/align.sh -s $SCRIPT_DIR $@ 
+SALMON|salmon|salmon.sh)
+	$SCRIPT_DIR/salmon.sh -s $SCRIPT_DIR $@ 
 	exit 0
-;;
+;;		
 counts|counts.sh)
 	$SCRIPT_DIR/counts.sh -s $SCRIPT_DIR $@
 	exit 0
