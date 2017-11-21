@@ -62,7 +62,7 @@ txi.reps <- tximport(paste(list.dirs(".",full.names=T,recursive=F),"/quant.sf",s
 # get the sample names from the folders	    
 mysamples <- list.dirs(".",full.names=F,recursive=F)
 
-# summarise to gene level (this can be done in the tximport step, but syntax is cleaner in two steps)
+# summarise to gene level (this can be done in the tximport step, but is easier to understand in two steps)
 txi.genes <- summarizeToGene(txi.reps,tx2gene)
 
 # set the sample names for txi.genes
@@ -181,14 +181,6 @@ clus <- function(X,clusters=10,m=1,name="hclust.pdf") {
 	
 # PCA 1 vs 2 plot
 vst <- varianceStabilizingTransformation(dds,blind=F,fitType="local")
-levels(vst@colData$condition)[levels(vst@colData$condition)=="RH1"] <- "02780"
-levels(vst@colData$condition)[levels(vst@colData$condition)=="RH2"] <- "02793"
-levels(vst@colData$condition)[levels(vst@colData$condition)=="RH3"] <- "F55"
-levels(vst@colData$condition)[levels(vst@colData$condition)=="RH4"] <- "10170"
-levels(vst@colData$condition)[levels(vst@colData$condition)=="RH5"] <- "MWT"
-levels(vst@colData$condition)[levels(vst@colData$condition)=="RH6"] <- "MOL"
-levels(vst@colData$condition)[levels(vst@colData$condition)=="RH7"] <- "MKO"
-levels(vst@colData$condition)[levels(vst@colData$condition)=="RH8"] <- "TJ"
 
 # calculate PCs				    
 mypca <- prcomp(t(assay(vst)))
@@ -199,14 +191,9 @@ mypca$percentVar <- mypca$sdev^2/sum(mypca$sdev^2)
 # create data frame of PCs x variance (sets PCA plot axes to same scale)
 df <- t(data.frame(t(mypca$x)*mypca$percentVar))
 
-# set pdf 
-pdf("quorn.pca.pdf",height=8,width=8)
+# plotOrd is a PCA/ordination plotting function 
+ggsave("pca.pdf",plotOrd(df,vst@colData,design="condition",xlabel="PC1",ylabel="PC2", pointSize=3,textsize=14))
 
-# PCA/ordination plotting function 
-plotOrd(df,vst@colData,design="condition",xlabel="PC1",ylabel="PC2", pointSize=3,textsize=14)
-
-dev.off()
-	
 # MA plots	
 pdf("MA_plots.pdf")
 
