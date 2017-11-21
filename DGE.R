@@ -108,7 +108,7 @@ dds <- collapseReplicates(dds,groupby=dds$groupby)
 #### end technical replicates ####   
 	    	    
 # featureCounts only - normalise counts for different library size (do after collapsing replicates)
-# NOTE: need to work out what to do with technical replicates for salmon workflow
+# NOTE: need to work out what to do if there are technical replicates for salmon workflow
 # probably take average of avgTxLength for the summed samples 
 sizeFactors(dds) <- sizeFactors(estimateSizeFactors(dds)) 
 
