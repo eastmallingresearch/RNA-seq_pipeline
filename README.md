@@ -34,7 +34,7 @@ Create project folder and linked to RNA-seq pipeline
 PROJECT_FOLDER=~/projects/my_project_folder
 mkdir -p $PROJECT_FOLDER
 
-ln -s $PROJECT_FOLDER/RNA-seq_pipeline $RNSPL
+ln -s $RNSPL $PROJECT_FOLDER/RNA-seq_pipeline 
 ```
 
 Create some sub folders to store files and analysis results
