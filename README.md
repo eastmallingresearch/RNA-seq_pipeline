@@ -76,7 +76,7 @@ done
 Trimming can currently be performed with Trimmomatic (trim.sh, submit_trim.sh and truseq.fa should all be in same directory)
 The default settings will only remove adapter contamination, for quality/length filtering append something like SLIDINGWINDOW:8:20  MINLEN:36. This will use a sliding window of 8 bases and cut the sequence if quality in the window drops below 20, also any trimmed sequences with a length less than 36 will be dropped.  
 
-Low quality/adapter contaminated reads are dumped (edit submit_trim.sh /dev/null to something else if you need to keep them)  
+Low quality/adapter contaminated reads are dumped (change location /dev/null in submit_trim.sh to something else if you need to keep them)  
 
 
 ```shell
