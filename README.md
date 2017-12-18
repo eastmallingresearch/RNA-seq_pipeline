@@ -98,8 +98,8 @@ for FR in $PROJECT_FOLDER/data/trimmed/*_1.fq.gz; do
  RR=$(echo $FR|sed 's/\_1\.fq/\_2\.fq/')
  $PROJECT_FOLDER/RNA-seq_pipeline/scripts/PIPELINE.sh -c filter \
  $PROJECT_FOLDER/RNA-seq_pipeline/phix/phix \
- $FR $RR \
- $PROJECT_FOLDER/filtered
+ $PROJECT_FOLDER/filtered \
+ $FR $RR
 done
 ```
 
