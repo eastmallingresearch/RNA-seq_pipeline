@@ -5,7 +5,15 @@
 ### Installation instructions
 Interproscan is a bit of a pain to get working - install instructions to follow
 
-Gene3D is still not working correctly and Panther has been depricated
+#### Issues
+
+Gene3D is still not working correctly
+The translation option (-t n) is not working correctly (uses EMBOSS getorf which I couldn't get to work).
+The included get_all_cds.pl (or get_longest_cds) and translate.pl can convert a nucleotide sequence(s) to protein:
+```
+get_all_cds.pl <mytranscriptome.fa|translate.pl|sed 's/\*//g' >myproteins.fa
+```
+It's a bit slow though.
 
 ### Running on cluster
 Interproscan has a built in option to run on an SGE cluster - but I couldn't get it to work.  
