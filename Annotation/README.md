@@ -22,9 +22,9 @@ At least one of the options *must* specify which analyses to perform (-appl) - o
  
  Other interesting options:  
  -iprlookup (provides mappings from matched member database signatures to the InterPro entries that they are integrated into)  
- -goterms  (provides mappings to the Gene Ontology - based on InterPro (IPR) matches)
- -pa (KEGG, MetaCyc and Reactome pathway lookup - based on InterPro (IPR) matches)
- -dra (switch off residue level annotations - speeds up analysis)
+ -goterms  (provides mappings to the Gene Ontology - based on InterPro (IPR) matches)  
+ -pa (KEGG, MetaCyc and Reactome pathway lookup - based on InterPro (IPR) matches)  
+ -dra (switch off residue level annotations - speeds up analysis)  
 
 
 The cluster job will create a tempory folder <TEMPFOLDER> in <FOLDER> which will contain the transcriptome split into multiple file containing 1000 sequences, and a file called <FILE>_splitfiles.txt which contains the path to each of the multiple files.
