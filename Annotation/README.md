@@ -6,6 +6,7 @@
 Interproscan is a bit of a pain to get working - install instructions to follow
 
 Gene3D is still not working correctly and Panther has been depricated
+
 ### Running on cluster
 Interproscan has a built in option to run on an SGE cluster - but I couldn't get it to work.  
 Therefore I've written my own version which splits a transcriptome into multiple files and runs multiple simultaneous jobs (hardcoded to 10). Compared to the Interproscan inbuilt clustering this will take an additional core for each simultaneous job.  
@@ -16,7 +17,7 @@ interproscan.sh FOLDER FILE <options>
 ```
 FOLDER is the location of the transcriptome file(s) - all output files will be copied here.  
 FILE is the name of the transcriptome file (accepts shell expandable wild cards to specify multiple files).  
-At least one of the options *must* specify which analyses to perform (-appl) - otherwise the Gene3D analysis will cause the JVM to crasdh.Below is the list of possible analyses:  
+At least one of the options *must* specify which analyses to perform (-appl) - otherwise the Gene3D analysis will cause the JVM to crash. Below is the list of possible analyses:  
  -appl CDD,COILS,HAMAP,MobiDBLite,Pfam,PIRSF,PRINTS,ProDom,PROSITEPATTERNS,PROSITEPROFILES,SFLD,SMART,SUPERFAMILY,TIGRFAM  
  
  Other interesting options:  
