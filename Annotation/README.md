@@ -5,34 +5,42 @@
 ### Installation instructions
 Interproscan can be a bit of a pain to get working...
 
+Interproscan 5 requires gcc 4.8 or later (4.7 installed on cluster)
+See https://github.com/eastmallingresearch/seq_tools/blob/master/install_progs/instructions.md for instructions for getting gcc upgraded
+alternatively use gcc installed in Andy's home directory
+
 These instructions were made using interproscan 5.27-66.0 
 
+#### Download files
 ```shell
 # download interproscan files
 mkdir ~/build
 cd build
 wget ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.27-66.0/interproscan-5.27-66.0-64-bit.tar.gz
 tar -zxf interproscan-5.27-66.0-64-bit.tar.gz
+```
 
-# interproscan 5 requires gcc 4.8 or later (4.7 installed on cluster)
-# See https://github.com/eastmallingresearch/seq_tools/blob/master/install_progs/instructions.md for instructions for getting gcc upgraded
-# alternatively use gcc installed in Andy's home directory
+#### install prereq libraries: 
 
-### install prereq libraries: sfld ###
+##### sfld
+```shell
 cd ~/build/interproscan-5.27-66.0/src/sfld/
 sed -i -e 's/^EASEL_DIR=/EASEL_DIR=~\/build\/hmmer-3.1b2-linux-intel-x86_64\/easel/' Makefile # might need to specify full path
 make 
 mv sfld_preprocess ../../../bin/sfld/.
 mv sfld_postprocess ../../../bin/sfld/. 
-
-### install prereq libraries: cath-resolve-hits ###
+```
+##### cath-resolve-hits
+```shell
 cd ~/build/interproscan-5.27-66.0/bin/gene3d/4.1.0
 wget "https://github.com/UCLOrengoGroup/cath-tools/releases/download/v0.16.2/cath-refine-align.centos6"
 cd ../../../
 echo -e "\n#cath-resolve settings\ncath.resolve.hits.switches.gene3d=--input-format=hmmer_domtblout" >>interproscan.properties
+```
 
-### install prereq libraries: rpsbproc ###
-# rpsbproc is part of BLAST+. The below uses a prebuilt version which may or may not last for long
+##### rpsbproc
+rpsbproc is part of BLAST+. The below uses a prebuilt version which may or may not still be available
+```shell
 cd ~/build/interproscan-5.27-66.0/bin/blast/ncbi-blast-2.6.0+
 wget "https://github.com/ebi-pf-team/interproscan/tree/master/core/jms-implementation/support-mini-x86-32/bin/blast/rpsbproc"
 chmod rpsbproc 755
@@ -44,8 +52,9 @@ cdd.signature.list.path=data/cdd/3.16/data/cddid.tbl
 cdd.library.path=data/cdd/3.16/db/Cdd_NCBI
 cdd.data.path=data/cdd/3.16/data
 EOT
-
-# the below is the "correct" way to get rpsbproc to work (blast+ install) - requires gcc 4.8+
+```
+The below is the "correct" way to get rpsbproc to work (blast+ install) - requires gcc 4.8+
+```shell
 mkdir cddblast
 cd cddblast
 wget ftp://ftp.ncbi.nih.gov/blast/executables/blast+/2.6.0/ncbi-blast-2.6.0+-src.tar.gz
@@ -59,9 +68,11 @@ make && make install
 #after compilation is complete (or update interprocscan.profile to installed file location)
 cp ReleaseMT/bin/rpsblast ../../../bin/blast/ncbi-blast-2.6.0+/
 cp ReleaseMT/bin/rpsbproc ../../../bin/blast/ncbi-blast-2.6.0+/
+```
 
+#### Compiling interproscan (borrowing various other precompiled bits from Andy's home directory)
 
-# Compiling interproscan (borrowing various other precompiled bits from Andy's home directory)
+```shell
 cd ~/build/interproscan-5.27-66.0
 ./configure \
  --prefix=/$HOME/usr/local  \
@@ -69,6 +80,9 @@ cd ~/build/interproscan-5.27-66.0
  --with-mpfr="/home/armita/prog/mpfr/mpfr-3.1.5" \
  --with-mpc="/home/armita/prog/mpc/mpc-0.8.2" \
  --disable-multilib
+
+# change the paths to the location (version 4.8+) of the specified files 
+make CC=path_to_gcc/gcc CPP=path_to_g++/g++ CXX=path_to_g++/g++-LD=path_to_g++/g++
 ```
 
 #### Issues
