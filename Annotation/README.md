@@ -99,7 +99,7 @@ It outputs all proteins at least 25 aa long - it's a bit slow mind. The sed gets
 Interproscan has a built in option to run on an SGE cluster - but I couldn't get it to work.  
 Therefore I've written my own version which splits a transcriptome into multiple files and runs multiple simultaneous jobs (hardcoded to 10). Compared to the Interproscan inbuilt clustering this will take an additional core for each simultaneous job.  
 
-To run interproscan on the cluster use interproscan.sh. This takes two compulsory + any iterproscan arguments.
+To run interproscan on the cluster use interproscan.sh. This takes two required + any optional iterproscan arguments.
 ```shell
 interproscan.sh FOLDER FILE <options>
 ```
