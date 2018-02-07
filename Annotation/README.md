@@ -13,7 +13,7 @@ The included get_all_cds.pl (or get_longest_cds) and translate.pl can convert a 
 ```
 get_all_cds.pl <mytranscriptome.fa|translate.pl|sed 's/\*//g' >myproteins.fa
 ```
-It's a bit slow though.
+It outputs all proteins at least 25 aa long - it's a bit slow mind.
 
 ### Running on cluster
 Interproscan has a built in option to run on an SGE cluster - but I couldn't get it to work.  
