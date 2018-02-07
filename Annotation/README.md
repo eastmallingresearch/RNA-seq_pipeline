@@ -1,4 +1,4 @@
-# Function annotation for transcriptomes
+# Functional annotation for transcriptomes
 
 ## Interproscan 5
 
