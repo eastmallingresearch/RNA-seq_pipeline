@@ -133,10 +133,18 @@ res <- results(dds,alpha=alpha)
 res.merged <- left_join(rownames_to_column(as.data.frame(res)),annotations,by=c("rowname"="query_id"))
 	
 # get significant results
-sig.res <- subset(res.merge,padj<=alpha)
+sig.res <- subset(res.merge,padj<=alpha) 
+# sig.res <- res[which(res$padj<=alpha),] # use this is you don't have annotations		 
 
 # write tables of results
 write.table(res.merged,"results.txt",quote=F,na="",row.names=F,sep="\t")
+
+# get sequences of significant transcripts - transcripts.fa is the file of transcripts
+# this will only work if the fastas are over two lines, i.e. not split every 80 bases (and the names match)		 
+seqs <- DNAStringSet(sapply(rownames(sig.res),function(s) {
+	DNAString(system2("grep",c(paste0(s," "),"-A1", "transcripts.fa"),stdout=T)[[2]])
+}))
+
 	
 #===============================================================================
 #       FPKM
@@ -159,6 +167,7 @@ write.table(myfpkm,"fpkm.txt",quote=F,na="",sep="\t")
 #       Heirachical clustering
 #===============================================================================
 
+# this is out of date - ward.D2 is the prefered method for clustering - actaully the whole function is a bit naff
 clus <- function(X,clusters=10,m=1,name="hclust.pdf") {
 	if (m==1) {d <- dist(X, method = "manhattan")}
 	else if (m==2) {d <- dist(X, method = "euclidean")}
