@@ -125,8 +125,7 @@ dds <- DESeq(dds,parallel=T)
 alpha <- 0.05
 
 # calculate the differences - uses the "levels" of the condition factor as the third term for the contrast
-# res is a list object containing the DESeq results objects for each contrast
-# contrast=c("condition","RH1","RH2") etc. (the below just runs through all of the different sample types (excluding RH1))
+# contrast=c("condition","S","H") etc - ?results for many more options
 res <- results(dds,alpha=alpha)
     
 # merge results with annotations
