@@ -140,7 +140,9 @@ sig.res <- subset(res.merge,padj<=alpha)
 write.table(res.merged,"results.txt",quote=F,na="",row.names=F,sep="\t")
 
 # get sequences of significant transcripts - transcripts.fa is the file of transcripts
-# this will only work if the fastas are over two lines, i.e. not split every 80 bases (and the names match)		 
+# this will only work if the fastas are over two lines, i.e. not split every 80 bases (and the names match)
+# the below shell script is a method for converting to 2 line fasta
+# awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' split_transcripts.fa|sed '1d' > transcripts.fa
 seqs <- DNAStringSet(sapply(rownames(sig.res),function(s) {
 	DNAString(system2("grep",c(paste0(s," "),"-A1", "transcripts.fa"),stdout=T)[[2]])
 }))
