@@ -142,10 +142,13 @@ write.table(res.merged,"results.txt",quote=F,na="",row.names=F,sep="\t")
 # this will only work if the fastas are over two lines, i.e. not split every 80 bases (and the names match)
 # the below shell script is a method for converting to 2 line fasta
 # awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' split_transcripts.fa|sed '1d' > transcripts.fa
-seqs <- DNAStringSet(sapply(rownames(sig.res),function(s) {
-	DNAString(system2("grep",c(paste0(s," "),"-A1", "transcripts.fa"),stdout=T)[[2]])
-}))
+# seqs <- DNAStringSet(sapply(rownames(sig.res),function(s) {
+#	DNAString(system2("grep",c(paste0(s," "),"-A1", "transcripts.fa"),stdout=T)[[2]])
+# }))
+# alternatively just load the whole of the transcript file (split every 80 bases or not) into a Biostrings object and subset by rowname:
+seqs <- readDNAStringSet("transcripts.fa")[rownames(sig.res)]	# o.k this is probably a better method unless transcripts.fa is massive
 
+		 
 	
 #===============================================================================
 #       FPKM
