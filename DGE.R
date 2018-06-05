@@ -56,7 +56,7 @@ tx2gene <- read.table("trans2gene.txt",header=T,sep="\t")
 # ...change of plan (it's easier to use list.dirs) though the below is very cool so I've left it here    
 # mysamples <- rapply(strsplit(list.files(".","quant.sf",full.names=T,recursive=T),"\\/"), f=`[[`, ...=2, how="unlist")
 
-# import quantification files	    
+# import quantification files - will not work if any additional directories are in the specified path
 txi.reps <- tximport(paste(list.dirs(".",full.names=T,recursive=F),"/quant.sf",sep=""),type="salmon",tx2gene=tx2gene,txOut=T)	    
 	    
 # get the sample names from the folders	    
