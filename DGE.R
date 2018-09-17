@@ -7,12 +7,14 @@ library("BiocParallel")
 register(MulticoreParam(12))
 library(ggplot2)
 library(Biostrings)
-library(devtools)
-load_all("~/pipelines/RNA-seq/scripts/myfunctions")
 library(data.table)
 library(dplyr)
 library(naturalsort)
 library(tibble)
+
+library(devtools)
+install_github("eastmallingresearch/Metabarcoding_pipeline/scripts") # RUN ONCE
+library(metafuncs) # contains some useful plotting function e.g. plotOrd 
 
 #===============================================================================
 #       Load data from fetureCounts
