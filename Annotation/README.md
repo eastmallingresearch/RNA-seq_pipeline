@@ -136,45 +136,56 @@ library(dplyr)
 annotations <- fread("cat *.tsv",header=T,fill=T) # if fread fails could try setting autostart to the line it fails on  (depedent on error)
 
 # add colnames
-colnames(annotations) <- c("PROT_ID","MD5","LENGTH","ANALYSIS","MATCH_ID","MATCH_DESC","START","STOP","E_VAL","STATUS","DATE","IPR_ID","IPR_DESC","GO_ID","PATHWAY")
+setnames(annotations,c("PROT_ID","MD5","LENGTH","ANALYSIS","MATCH_ID","MATCH_DESC","START","STOP","E_VAL","STATUS","DATE","IPR_ID","IPR_DESC","GO_ID","PATHWAY"))
 # add gene data (from exon data)
-annotations$GENE <- sub("\\..*","",annotations$PROT_ID)
-annotations$EXON <- gsub("(.*\\.)([0-9]+)(_.*)","\\2",annotations$PROT_ID)
-annotations$FRAME <- gsub("(.*\\.[0-9]+_)([0-9]+)(_.*)","\\2",annotations$PROT_ID)
-annotations$ORF <- gsub(".*_","",annotations$PROT_ID)
-annotations$DIRECTION <- gsub("(.*\\.[0-9]+_[0-9]+_)([A-Z]+)(_.*)","\\2",annotations$PROT_ID)
-annotations$DIRECTION <- sub("F","\\+",annotations$DIRECTION)
-annotations$DIRECTION <- sub("RC","\\-",annotations$DIRECTION)
-write.table(annotations,"full_annotations.txt",sep="\t",row.names=F,quote=F,na="")
+annotations[,GENE:=sub("\\..*","",PROT_ID)]
+annotations[,EXON:=gsub("(.*\\.)([0-9]+)(_.*)","\\2",PROT_ID)]
+annotations[,FRAME:=gsub("(.*\\.[0-9]+_)([0-9]+)(_.*)","\\2",PROT_ID)]
+annotations[,ORF:=gsub(".*_","",PROT_ID)]
+annotations[,DIRECTION:=ggsub("(.*\\.[0-9]+_[0-9]+_)([A-Z]+)(_.*)","\\2",PROT_ID)]
+annotations[,DIRECTION:=sub("F","\\+",annotations$DIRECTION)]
+annotations[,DIRECTION:=sub("RC","\\-",annotations$DIRECTION)]
+fwite(annotations,"full_annotations.txt",sep="\t",row.names=F,quote=F,na="")
+
+#annotations$GENE <- sub("\\..*","",annotations$PROT_ID)
+#annotations$EXON <- gsub("(.*\\.)([0-9]+)(_.*)","\\2",annotations$PROT_ID)
+#annotations$FRAME <- gsub("(.*\\.[0-9]+_)([0-9]+)(_.*)","\\2",annotations$PROT_ID)
+#annotations$ORF <- gsub(".*_","",annotations$PROT_ID)
+#annotations$DIRECTION <- gsub("(.*\\.[0-9]+_[0-9]+_)([A-Z]+)(_.*)","\\2",annotations$PROT_ID)
+#annotations$DIRECTION <- sub("F","\\+",annotations$DIRECTION)
+#annotations$DIRECTION <- sub("RC","\\-",annotations$DIRECTION)
+
 
 # subset annotations with GeneID an anaylses results
 slim_annot <- annotations[,c(16,4,5,6,12,13,14,15)]
 # remove MobiDBLite and Coils results (or keep if they're useful to you)
 slim_annot <- slim_annot[ANALYSIS!="MobiDBLite"|ANALYSIS!="Coils",]
-slim_annot$ANALYSIS <- as.factor(slim_annot$ANALYSIS)
-write.table(slim_annot,"slim_annotations_v1.txt",sep="\t",row.names=F,quote=F,na="")
+slim_annot[,ANALYSIS:=as.factor(slim_annot)]
+#slim_annot$ANALYSIS <- as.factor(slim_annot$ANALYSIS)
+fwrite(slim_annot,"slim_annotations_v1.txt",sep="\t",row.names=F,quote=F,na="")
 
 # subset just IPR and GO data
 slim_annot2 <- slim_annot[IPR_ID!=""|GO_ID!="",]
-slim_annot2 <- slim_annot[,c(1,5,6,7,8)]
-slim_annot2
-write.table(slim_annot2,"slim_annotations_v2.txt",sep="\t",row.names=F,quote=F,na="")
+slim_annot2[,c(2:4):=NULL]
+#slim_annot2 <- slim_annot2[,c(1,5,6,7,8)]
+fwite(slim_annot2,"slim_annotations_v2.txt",sep="\t",row.names=F,quote=F,na="")
 
 ### reshape data ###
 
 slim_annotations <- slim_annot
-slim_annotations$ANALYSIS <- as.factor(slim_annotations$ANALYSIS)
+#slim_annotations$ANALYSIS <- as.factor(slim_annotations$ANALYSIS)
 
 # convert to list of datatables for each analysis
 df_annotations <- lapply(levels(slim_annotations$ANALYSIS),function(l) slim_annotations[ANALYSIS==l])
 
 # add names
-names(df_annotations) <- levels(slim_annotations$ANALYSIS)
+setnames(df_annotations,levels(slim_annotations$ANALYSIS))
 
 # drop duplicates from all tables
 df_annotations <- lapply(df_annotations,function(l) l[!duplicated(l)])
 
 # split "|" seperated strings 
+# not certain this has to be reassigned back to long_annotations
 long_annotations <- lapply(df_annotations,function(l) l[, strsplit(as.character(GO_ID), "|", fixed=TRUE), by = .(GENE,MATCH_ID,MATCH_DESC,IPR_ID,IPR_DESC,PATHWAY,GO_ID)][,.(GENE,MATCH_ID,MATCH_DESC,IPR_ID,IPR_DESC,PATHWAY,GO_ID = V1)])
 
 
