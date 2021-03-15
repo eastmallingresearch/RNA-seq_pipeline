@@ -17,7 +17,8 @@ Don't think it will change dramtically..
  
 
 ## Description
-RNA-seq pipeline for Illumina data. This pipeline is designed to run on a Sun Grid Engine cluster. 
+RNA-seq pipeline for Illumina data. This pipeline is designed to run on a ~~ Sun Grid Engine cluster ~~ Slurm cluster
+
 
 Current implementation uses STAR for aligning, featureCounts for abundance counting and DESeq2 for DGE
 
