@@ -78,37 +78,60 @@ for FILE in $PROJECT_FOLDER/data/fastq/*.gz; do
 done
 ```
 
-## Trim data
+## Updates...
 
-*Why trimmomatic for adapter contamination removal???*
+Using bbtools for filtering
 
-Trimming can currently be performed with Trimmomatic (trim.sh, submit_trim.sh and truseq.fa should all be in same directory)
-The default settings will only remove adapter contamination, for quality/length filtering append something like SLIDINGWINDOW:8:20  MINLEN:36. This will use a sliding window of 8 bases and cut the sequence if quality in the window drops below 20, also any trimmed sequences with a length less than 36 will be dropped.  
+### Adapter removal/quality filtering and contaminant filtering
+BBTools has good options for doing all of this. 
 
-Low quality/adapter contaminated reads are dumped (change location /dev/null in submit_trim.sh to something else if you need to keep them)  
+I've merged adapter removal, phix filtering and rRNA removal into a single operation using BBDuk (though it has to run multiple times, rather than a single passthrough). To modify any settings will require editing the mega_duk.sh script. Alternatively the three operations can be run seperately using bbduk (PIPELINE.sc -c bbduk). 
 
+
+To use the below scripts without editing BBtools will neeed to be installed in ~/pipelines/common/bbtools
+
+#### Adapter/phix/rRNA removal
+Runs all three of the options in "Filtering full options" shown at bottom
 
 ```shell
-for FR in $PROJECT_FOLDER/data/fastq/*_1.fastq.gz; do
- RR=$(echo $FR|sed 's/\_1\.fastq/\_2\.fastq/')
- $PROJECT_FOLDER/RNA-seq_pipeline/scripts/PIPELINE.sh -c trim \
- $FR \
- $RR \
- $PROJECT_FOLDER/data/trimmed \
- $PROJECT_FOLDER/RNA-seq_pipeline/scripts/truseq.fa \
- 4
-done
+for FR in $PROJECT_FOLDER/data/fastq/*_1.fq.gz; do
+  RR=$(sed 's/_1/_2/' <<< $FR)
+  sbatch --mem=20000 -p medium -c 10 $PROJECT_FOLDER/RNA-seq_pipeline/scripts/mega_duk.sh \
+  $PROJECT_FOLDER/RNA-seq_pipeline/common/resources/adapters/truseq.fa \
+  $PROJECT_FOLDER/RNA-seq_pipeline/common/resources/contaminants/phix_174.fa \
+  $PROJECT_FOLDER/RNA-seq_pipeline/common/resources/contaminants/ribokmers.fa.gz \
+  $PROJECT_FOLDER/data/filtered \
+  $FR \
+  $RR
+done 
+
 ```
+bbduk command line arguments used:  
+adapter removal forward; ktrim=l k=23 mink=11 hdist=1 tpe tbo t=10
+adapter removal reverse; ktrim=r k=23 mink=11 hdist=1 tpe tbo t=10
+phix filtering; k=31 hdist=1 t=4
+rRNA filtering; k=31 t=4 
 
-## Filter data
-Remove phix/rrna or other contaminants
+#### Human contaminant removal (BBMap)
+
+Not certain this is relevant for RNAseq...
+
 ```shell
-for FR in $PROJECT_FOLDER/data/trimmed/*_1.fq.gz; do
- RR=$(echo $FR|sed 's/\_1\.fq/\_2\.fq/')
- $PROJECT_FOLDER/RNA-seq_pipeline/scripts/PIPELINE.sh -c filter \
- $PROJECT_FOLDER/RNA-seq_pipeline/phix/phix \
- $PROJECT_FOLDER/data/filtered \
- $FR $RR
+for FR in $PROJECT_FOLDER/data/filtered/*_1*.fq.gz; do
+  RR=$(sed 's/_1/_2/' <<< $FR)
+  sbatch --mem=40000 -p medium -c 20 $PROJECT_FOLDER/metagenomics_pipeline/scripts/slurm/sub_bbmap.sh \
+  $PROJECT_FOLDER/metagenomics_pipeline/common/resources/contaminants/bbmap_human \
+  $PROJECT_FOLDER/data/cleaned \
+  $FR \
+  $RR \
+  minid=0.95 \
+  maxindel=3 \
+  bwr=0.16 \
+  bw=12 \
+  quickmatch \
+  fast \
+  minhits=2 \
+  t=8
 done
 ```
 
