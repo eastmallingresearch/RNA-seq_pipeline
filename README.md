@@ -1,3 +1,9 @@
+# EDITING
+
+This is out of date - update required to convert tp slurm and check on current best practices
+Don't think it will change dramtically..
+
+
 # RNA-seq_pipeline
 
 ## Index 
@@ -73,6 +79,9 @@ done
 ```
 
 ## Trim data
+
+*Why trimmomatic for adapter contamination removal???*
+
 Trimming can currently be performed with Trimmomatic (trim.sh, submit_trim.sh and truseq.fa should all be in same directory)
 The default settings will only remove adapter contamination, for quality/length filtering append something like SLIDINGWINDOW:8:20  MINLEN:36. This will use a sliding window of 8 bases and cut the sequence if quality in the window drops below 20, also any trimmed sequences with a length less than 36 will be dropped.  
 
