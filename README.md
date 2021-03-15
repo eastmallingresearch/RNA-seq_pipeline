@@ -17,14 +17,10 @@ Don't think it will change dramtically..
  
 
 ## Description
-RNA-seq pipeline for Illumina data. This pipeline is designed to run on a ~~ Sun Grid Engine cluster ~~ Slurm cluster
+RNA-seq pipeline for Illumina data. This pipeline is designed to run on a ~~Sun Grid Engine cluster 
+~~ Slurm cluster
 
-
-Current implementation uses STAR for aligning, featureCounts for abundance counting and DESeq2 for DGE
-
-Future verions will include k-mer based alignment (Kallisto/Salmon etc.) with their automatic feature abundance estimates and trasnscript quantification/estimation tools (isoEM/eXpress etc.). These tools can be used to analyse differential exon usage. The output is not directly usable by DESeq2 for DGE, but there are methods available to convert estimated abundances to count data.
-
-I might add HISAT2/TOPHAT3 to the mix - once TH3 has been released.
+Current implementation uses Salmon pseudo alignment, with the option of using STAR for full aligning, featureCounts for abundance counting and DESeq2 for DUE
 
 ## Setup pipeline
 ```shell
