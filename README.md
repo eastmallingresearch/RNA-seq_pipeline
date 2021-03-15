@@ -17,8 +17,7 @@ Don't think it will change dramtically..
  
 
 ## Description
-RNA-seq pipeline for Illumina data. This pipeline is designed to run on a ~~Sun Grid Engine cluster 
-~~ Slurm cluster
+RNA-seq pipeline for Illumina data. This pipeline is designed to run on a ~~Sun Grid Engine cluster~~ Slurm cluster
 
 Current implementation uses Salmon pseudo alignment, with the option of using STAR for full aligning, featureCounts for abundance counting and DESeq2 for DUE
 
