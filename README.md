@@ -179,7 +179,7 @@ tximport is an R library which can convert salmon transcript "pseudo" counts (or
 First needs a mapping file of transcript to gene.
 (Any of the output quant.sf files can be used)
 ```shell
- awk -F"\t" '{c=$1;sub("\..*","",$1);print c,$1}' OFS="\t" quant.sf >trans2gene.txt
+ awk -F"\t" '{c=$1;sub("\\..*","",$1);print c,$1}' OFS="\t" quant.sf >trans2gene.txt
 ```
 
 Tximport requires R v 3.3 to install via Bioconductor, otherwise can install from the binary 
