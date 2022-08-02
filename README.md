@@ -11,7 +11,7 @@ Don't think it will change dramtically - nothing to add
  1. Description
  4. [Preprocesong](../master/preporcessing.md)
  7. [(Pseudo)alignment](../master/preporcessing.md)
-  *7.1 [Pseudoalignment with Salmon](../master/salmon.md)
+  7.1. [Pseudoalignment with Salmon](../master/salmon.md)
  10. Trim data
  13. Align to ref
  16. Count features
