@@ -1,10 +1,3 @@
-# EDITING
-
-This is out of date - update required to convert tp slurm and check on current best practices (done
-
-Don't think it will change dramtically - nothing to add
-
-
 # RNA-seq_pipeline
 
 ## Index 
