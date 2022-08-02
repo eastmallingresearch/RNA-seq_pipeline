@@ -1,7 +1,8 @@
 # EDITING
 
-This is out of date - update required to convert tp slurm and check on current best practices
-Don't think it will change dramtically..
+This is out of date - update required to convert tp slurm and check on current best practices (done
+
+Don't think it will change dramtically - nothing to add
 
 
 # RNA-seq_pipeline
@@ -19,7 +20,7 @@ Don't think it will change dramtically..
 ## Description
 RNA-seq pipeline for Illumina data. This pipeline is designed to run on a ~~Sun Grid Engine cluster~~ Slurm cluster
 
-Current implementation uses Salmon pseudo alignment, with the option of using STAR for full aligning, featureCounts for abundance counting and DESeq2 for DUE
+Current implementation uses Salmon pseudo alignment + DESeq2, with the option of using STAR for full aligning, featureCounts for abundance counting and DEXSeq for DUE
 
 ## Setup pipeline
 ```shell
@@ -83,7 +84,6 @@ BBTools has good options for doing all of this.
 
 I've merged adapter removal, phix filtering and rRNA removal into a single operation using BBDuk (though it has to run multiple times, rather than a single passthrough). To modify any settings will require editing the mega_duk.sh script. Alternatively the three operations can be run seperately using bbduk (PIPELINE.sc -c bbduk). 
 
-
 To use the below scripts without editing BBtools will neeed to be installed in ~/pipelines/common/bbtools
 
 #### Adapter/phix/rRNA removal
@@ -131,17 +131,11 @@ for FR in $PROJECT_FOLDER/data/filtered/*_1*.fq.gz; do
 done
 ```
 
-## Align to ref genome/transcriptome
-
-DESeq (v1.11.23).
-https://f1000research.com/articles/4-1521/v2
-
-Update to come with implementation
+## (Pseudo)align to ref genome/transcriptome
 
 ### Quantification using Salmon
 Salmon can run in two modes, psuedo mapping or alignmnet mode using a pre-aligned SAM/BAM. The BAM <i>must</i> be unsorted and aligned to the transcriptome. 
 
-O.K. running Salmon with the filtered read files - it's fast...
 
 #### Build index for salmon psuedo mapping
 Assuming the transcriptome is available...
