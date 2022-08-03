@@ -1,4 +1,53 @@
 #===============================================================================
+#       Load data
+#===============================================================================
+
+# read in pfam annotation
+
+annotation <- fread(paste0(home,"/pipelines/common/resources/pfam/names.txt"))
+setnames(annotation,"NAME","PFAM_NAME")
+pfam_go <- fread(paste0(home,"/pipelines/common/resources/mappings/pfam_go_map"),header=F)
+
+#### bins ####
+countData <- fread(paste0(SITE,".countData"))
+
+#setnames(countData,names(countData),sub("(_ND.*_L)([0-9]*)(.*)","_\\2",names(countData)))
+setnames(countData,"DOMAINS","PFAM_NAME")
+
+# get number of reads mapped to domains       
+print(as.data.frame(colSums(countData[,-1])))
+
+# map bins to pfam and go terms
+mapping_pfam <- annotation[countData[,1,with=F],on="PFAM_NAME"]
+
+### end bins ###
+
+
+### sub bins ###
+countData <- fread(paste0(SITE,".bins.countData"))
+setnames(countData,names(countData),sub("_L","_",names(countData)))
+countData[,PFAM_NAME:=gsub("(k[0-9]+_[0-9]+_)(.*)(_[0-9]+_[0-9]+$)","\\2",SUB_BIN_NAME)]
+unsetNA(countData)
+
+mapping_pfam <- annotation[countData[,c(1,ncol(countData)),with=F],on="PFAM_NAME"]
+
+# remove unused columns from countData (BIN_ID can be mapped to mapping_pfam)
+colsToDelete <- c("PFAM_NAME") 
+countData[, (colsToDelete) := NULL]
+
+### end sub bins###
+
+
+# annotation
+mapping_go   <- copy(mapping_pfam)
+mapping_go$ACC <- sub("\\..*","",mapping_go$ACC)
+mapping_go <- data.table(left_join(mapping_go,pfam_go,by=(c("ACC"="V1"))))
+mapping_go <- mapping_go[complete.cases(mapping_go),]
+
+
+
+
+#===============================================================================
 #       Functional analysis (sub bins) 
 #===============================================================================
 library(topGO)
@@ -65,25 +114,3 @@ showSigOfNodes(GOdata, score(resultFisher), firstSigNodes = 5, useInfo = 'all')
 # showSigOfNodes(GOdata, score(resultKS.elim), firstSigNodes = 5, useInfo = 'all')
 showSigOfNodes(GOdata, score(resultFisher.weight), firstSigNodes = 5, useInfo = 'all')
 dev.off()
-#===============================================================================
-#       Plots and etc.
-#===============================================================================
-
-mypca <- des_to_pca(dds)
-d <-t(data.frame(t(mypca$x)*mypca$percentVar))
-
-# Anova of first 4 PC scores
-lapply(seq(1:4),function(x) {summary(aov(mypca$x[,x]~Site+Block_pair+Status,colData(dds)))})
-
-# sum of Sum-of-squares 
-sum_squares <- t(apply(mypca$x,2,function(x) 
-  t(summary(aov(x~Block_pair+Status,colData(dds)))[[1]][2]))
-)
-colnames(sum_squares) <- c("Block","Condition","residual")
-x<-t(apply(sum_squares,1,prop.table))
-perVar <- x * mypca$percentVar
-#colSums(perVar)
-colSums(perVar)/sum(colSums(perVar))*100
-
-# plot with lines joining blocks/pairs
-ggsave(paste0(SITE,"_bins.pdf"),plotOrd(d,colData(dds),design="Status",shape="Block_pair",pointSize=2,alpha=0.75,cbPalette=T) )
