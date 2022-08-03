@@ -36,14 +36,17 @@ test.genes[,geneID:=sub("(GeneID:)([0-9]*)(,.*)","\\2",geneID)]
 # pathway genes |   c   |   d    | c + d
 # Total         | a + c | b  + d | a + b + c +d
 
+                      
 
 fisher.fun <- function(pathway.genes,exp.genes,padj="padj",cutoff=0.05,geneID="geneID") {
-  a=sum(exp.genes[[padj]]<=cutoff,na.rm=T)
-  b=nrow(exp.genes)-a
-  c=sum(pathway.genes%in%exp.genes[[geneID]][exp.genes[[padj]]<=cutoff])
-  d=length(pathway.genes)-c
-  DF<-data.frame(t=c(a,c),f=c(b,d))
-  fisher.test(DF)
+  A=sum(exp.genes[[padj]]<=cutoff,na.rm=T)
+  B=nrow(exp.genes)-a
+  C=pathway.genes%in%exp.genes[[geneID]][exp.genes[[padj]]<=cutoff]# get these genes
+  D=length(pathway.genes)-c
+  DF<-data.frame(t=c(A,sum(C)),f=c(B,D))
+  f<-fisher.test(DF)
+  list(f,DF,pathway.genes[C])   
+   # c
 }
     
     
