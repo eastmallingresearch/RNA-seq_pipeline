@@ -15,6 +15,10 @@ salmon index -t $PROJECT_FOLDER/data/genome/transcriptome.fasta -i $PROJECT_FOLD
 
 ## Mapping and quantification with salmon
 is a single process - it accepts gz/bgz compressed files
+
+*CHECK THE OUTPUT FOLDER NAMES*
+Output will be overwritten if OUTDIR is not unique
+
 ```shell
 for FR in $PROJECT_FOLDER/data/filtered/*_1.filtered.fq.gz; do
  RR=$(echo $FR|sed 's/_1/_2/')
